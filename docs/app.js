@@ -163,6 +163,10 @@ function crearMapa() {
     map.addLayer({ id:"etiquetas", type:"raster", source:"etiquetas", paint:{"raster-opacity":0.85} });
     map.addLayer({ id:"hover", type:"circle", source:"recintos", paint:{ "circle-color":"rgba(0,0,0,0)", "circle-radius":radioHover }});
 
+    // Inicializar KDE overlay
+    kdeInit(map);
+    kdeSetDatos(resultados, modo, candActual);
+
     actualizarLeyenda();
     setupPopup();
   });
@@ -170,11 +174,11 @@ function crearMapa() {
 
 function actualizarMapa() {
   if (!map.getSource("recintos")) return;
-  // Actualizar valor_candidato en datos
   const geo = crearGeoJSON();
   map.getSource("recintos").setData(geo);
   map.setPaintProperty("recintos", "circle-color",   colorExpr());
   map.setPaintProperty("recintos", "circle-opacity",  opacidadExpr());
+  kdeSetDatos(resultados, modo, candActual);
   actualizarLeyenda();
 }
 
@@ -349,6 +353,32 @@ function setupUI() {
   document.querySelector("#sel-cand")?.addEventListener("change", e => {
     candActual = e.target.value;
     if (map.getSource("recintos")) actualizarMapa();
+  });
+
+  // KDE toggle
+  document.querySelector("#kde-on")?.addEventListener("change", e => {
+    const on = e.target.checked;
+    document.querySelector("#kde-controls").style.display = on ? "" : "none";
+    kdeToggle(on);
+  });
+
+  // KDE radio
+  document.querySelector("#kde-radio")?.addEventListener("input", e => {
+    const v = +e.target.value;
+    document.querySelector("#kde-radio-val").textContent = v + " m";
+    kdeSetRadio(v);
+  });
+
+  // KDE opacidad
+  document.querySelector("#kde-opac")?.addEventListener("input", e => {
+    const v = +e.target.value;
+    document.querySelector("#kde-opac-val").textContent = v + "%";
+    kdeSetOpacidad(v / 100);
+  });
+
+  // KDE paleta
+  document.querySelector("#kde-paleta")?.addEventListener("change", e => {
+    kdeSetPaleta(e.target.value);
   });
 }
 

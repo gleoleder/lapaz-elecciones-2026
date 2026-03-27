@@ -203,6 +203,23 @@ body {
 .loader-txt { color:#fff; font:500 .75rem var(--f); }
 @keyframes spin { to{transform:rotate(360deg)} }
 
+/* ── KDE Controls ── */
+.kde-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+.kde-toggle { position:relative; display:inline-block; width:36px; height:20px; flex-shrink:0; }
+.kde-toggle input { opacity:0; width:0; height:0; }
+.kde-track  { position:absolute; inset:0; border-radius:20px; background:var(--surface3); border:1px solid var(--border2); cursor:pointer; transition:var(--tr); }
+.kde-track::before { content:''; position:absolute; width:14px; height:14px; left:2px; top:2px; border-radius:50%; background:var(--text4); transition:var(--tr); }
+.kde-toggle input:checked + .kde-track { background:var(--p2); border-color:var(--p); }
+.kde-toggle input:checked + .kde-track::before { transform:translateX(16px); background:var(--p); box-shadow:0 0 6px var(--p); }
+
+.kde-row  { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+.kde-lbl  { font:500 .58rem var(--f); color:var(--text3); width:46px; flex-shrink:0; text-transform:uppercase; letter-spacing:.04em; }
+.kde-range{ flex:1; -webkit-appearance:none; height:3px; border-radius:3px; background:var(--surface3); outline:none; cursor:pointer; }
+.kde-range::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--p2); border:2px solid var(--p); cursor:pointer; transition:var(--tr); }
+.kde-range::-webkit-slider-thumb:hover { background:var(--p); box-shadow:0 0 6px var(--p); }
+.kde-val  { font:700 .55rem var(--fm); color:var(--text2); width:38px; text-align:right; flex-shrink:0; }
+.kde-sel  { flex:1; padding:4px 24px 4px 7px; font-size:.7rem; }
+
 /* ── Responsive ── */
 @media(max-width:768px){
   .header-sub,.header-ts{display:none}

@@ -55,6 +55,36 @@
         <div id="leg-panel"></div>
       </div>
 
+      <div class="panel-section" id="sect-kde">
+        <div class="kde-header">
+          <label class="filter-label" style="margin-bottom:0">Mapa de calor KDE</label>
+          <label class="kde-toggle">
+            <input type="checkbox" id="kde-on">
+            <span class="kde-track"></span>
+          </label>
+        </div>
+        <div id="kde-controls" style="display:none;margin-top:8px">
+          <div class="kde-row">
+            <span class="kde-lbl">Radio</span>
+            <input type="range" class="kde-range" id="kde-radio" min="300" max="2500" step="100" value="900">
+            <span class="kde-val" id="kde-radio-val">900 m</span>
+          </div>
+          <div class="kde-row">
+            <span class="kde-lbl">Opacidad</span>
+            <input type="range" class="kde-range" id="kde-opac" min="20" max="100" step="5" value="82">
+            <span class="kde-val" id="kde-opac-val">82%</span>
+          </div>
+          <div class="kde-row">
+            <span class="kde-lbl">Paleta</span>
+            <select class="filter-select kde-sel" id="kde-paleta">
+              <option>Fuego</option><option>Plasma</option><option>Viridis</option>
+              <option>Inferno</option><option>Magma</option><option>Cool</option>
+              <option>Neon</option><option>Ocean</option><option>RdYlGn</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div class="panel-section">
         <label class="filter-label">Estadísticas</label>
         <div class="stat-row"><span class="stat-lb">Recintos totales</span><span class="stat-vl accent" id="p-rec">—</span></div>
@@ -96,6 +126,7 @@
   </div>
 
   <script src="https://unpkg.com/maplibre-gl@4.0.2/dist/maplibre-gl.js"></script>
+  <script src="kde.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
