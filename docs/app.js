@@ -402,9 +402,13 @@ function setupUI() {
       if (tabActual === "kde") {
         kdeToggle(true);
         aplicarKDE();
+        // Ocultar puntos por defecto al entrar a KDE
+        setVisibilidadPuntos(false);
+        const chk = document.querySelector("#kde-toggle-puntos");
+        if (chk) chk.checked = false;
       } else {
         kdeToggle(false);
-        // Restaurar puntos y popup al volver al mapa
+        // Restaurar puntos al volver al mapa
         setVisibilidadPuntos(true);
       }
     });
