@@ -46,6 +46,7 @@ let mostrarPuntos = true;
 let tabActual = "mapa";
 let kdePartidoActual = "";
 let kdePaletaActual  = "Fuego";
+let _selectedMarker  = null;
 
 // ── Inicialización ─────────────────────────────────────────────────────────
 async function init() {
@@ -295,21 +296,46 @@ function popupHTML(props) {
   return `<div class="pp"><div class="pp-head"><div class="pp-winner-row">${fotoEl(gan,54)}<div class="pp-info"><div class="pp-title">${props.recinto??"Recinto sin nombre"}</div><div class="pp-badge" style="background:${cg}18;color:${cg};border-color:${cg}44">${gan} · ${fmt(props.ganador)}</div></div></div></div><div class="pp-stats"><div class="pp-stat"><span class="pp-sv">${fmtN(props.habilitados)}</span><span class="pp-sl">Habilitados</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.validos)}</span><span class="pp-sl">Válidos</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.blancos)}</span><span class="pp-sl">Blancos</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.nulos)}</span><span class="pp-sl">Nulos</span></div></div>${analisisHTML(lista,props.invalido??0)}<div class="pp-lista">${barras}</div><div class="pp-foot">Municipio de La Paz · Elecciones 2026</div></div>`;
 }
 
+// ── Marcador pulsante ──────────────────────────────────────────────────────
+function showSelectedMarker(coords) {
+  removeSelectedMarker();
+  const el = document.createElement("div");
+  el.className = "selected-marker";
+  _selectedMarker = new maplibregl.Marker({ element: el, anchor: "center" })
+    .setLngLat(coords)
+    .addTo(map);
+}
+
+function removeSelectedMarker() {
+  if (_selectedMarker) { _selectedMarker.remove(); _selectedMarker = null; }
+}
+
 // ── Overlay ficha recinto ──────────────────────────────────────────────────
 function abrirFicha(props, coords) {
   document.querySelector("#rcBody").innerHTML = popupHTML(props);
   document.querySelector("#rcBackdrop").classList.add("open");
   document.querySelector("#rcSheet").classList.add("open");
 
-  // Centrar el mapa en el recinto (con offset para el panel en desktop)
-  const panelAbierto = !document.querySelector("#panel").classList.contains("collapsed");
-  const offsetX = (panelAbierto && window.innerWidth > 768) ? 140 : 0;
-  map.easeTo({ center: coords, offset: [offsetX, 0], duration: 380, essential: true });
+  // Marcador pulsante sobre el recinto clickeado
+  showSelectedMarker(coords);
+
+  // Centrar el recinto en la zona visible del mapa
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    // La sheet ocupa ~65dvh → centrar el recinto en el área superior visible
+    const sheetH = Math.round(window.innerHeight * 0.65);
+    map.easeTo({ center: coords, padding: { bottom: sheetH, top: 0, left: 0, right: 0 }, duration: 420, essential: true });
+  } else {
+    const panelAbierto = !document.querySelector("#panel").classList.contains("collapsed");
+    const offsetX = panelAbierto ? 140 : 0;
+    map.easeTo({ center: coords, offset: [offsetX, 0], duration: 380, essential: true });
+  }
 }
 
 function cerrarFicha() {
   document.querySelector("#rcBackdrop").classList.remove("open");
   document.querySelector("#rcSheet").classList.remove("open");
+  removeSelectedMarker();
 }
 
 function setupPopup() {

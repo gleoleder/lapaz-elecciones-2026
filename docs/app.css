@@ -206,37 +206,66 @@ body {
   scrollbar-color: var(--p2) transparent;
   animation: rcSlideUp .22s cubic-bezier(.32,0,.67,0);
 }
-.rc-sheet.open { display: block; }
+.rc-sheet.open { display: flex; flex-direction: column; }
 .rc-sheet::-webkit-scrollbar { width: 3px; }
 .rc-sheet::-webkit-scrollbar-thumb { background: var(--p2); border-radius: 3px; }
 
+/* Barra superior de la ficha (handle + botón cerrar) */
+.rc-top {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 10px 6px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
 .rc-handle {
   display: none;
-  width: 36px; height: 4px;
-  background: rgba(255,255,255,.2);
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px; height: 4px;
+  background: rgba(255,255,255,.25);
   border-radius: 4px;
-  margin: 10px auto 0;
+  pointer-events: none;
 }
 
 .rc-close {
-  position: sticky;
-  top: 8px;
-  float: right;
-  margin: 8px 8px 0 0;
-  z-index: 2;
-  width: 30px; height: 30px;
+  width: 32px; height: 32px;
   border-radius: 50%;
-  background: rgba(255,255,255,.1);
+  background: rgba(255,255,255,.08);
   border: 1px solid var(--border);
   color: var(--text3);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: var(--tr);
+  flex-shrink: 0;
 }
 .rc-close:hover { background: rgba(255,255,255,.18); color: var(--text); }
 
-.rc-body { overflow: hidden; }
+.rc-body { overflow: hidden; flex: 1; min-height: 0; }
 .rc-body .pp { width: 100%; border-radius: 0; box-shadow: none; border: none; }
+
+/* ── Marcador pulsante del recinto seleccionado ── */
+.selected-marker {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: rgba(255,255,255,.15);
+  pointer-events: none;
+  animation: markerPulse 1.4s ease-in-out infinite;
+}
+@keyframes markerPulse {
+  0%, 100% { transform: scale(1);   opacity: .85; box-shadow: 0 0 0 0 rgba(255,255,255,.4); }
+  50%       { transform: scale(1.5); opacity: .4;  box-shadow: 0 0 0 8px rgba(255,255,255,.0); }
+}
 
 /* ── Popup ── */
 .pp { background:var(--surface); border:1px solid var(--border2); border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,.6); width:300px; overflow:hidden; font-family:var(--f); }
@@ -348,12 +377,12 @@ body {
     right: 0;
     transform: none;
     width: 100%;
-    max-height: 82dvh;
+    max-height: 65dvh;
     border-radius: 20px 20px 0 0;
-    animation: rcSlideUpMob .26s cubic-bezier(.32,0,.67,0);
+    animation: rcSlideUpMob .28s cubic-bezier(.22,1,.36,1);
   }
   .rc-handle { display: block; }
-  .rc-close  { top: 12px; }
+  .rc-top    { padding-top: 18px; }  /* espacio extra para el handle */
 }
 
 /* ── Tablet / phablet (≤ 768px) ── */
