@@ -60,141 +60,127 @@
 
 import {define} from "./_observablehq/client.f24fbf15.js";
 
-define({id: "c0b59e78", outputs: ["maplibregl","d3","DATA_BASE","MAPA_FALLBACK","STORAGE_MAP_KEY","metricaInvalidos","metricaCandidato","colorPartido","getStorage","cargarDatos","crearRecintos","crearMapa","crearCapasBase","aplicarColorMapa","persistirMapa","leerMapaInicial","popupHTML","renderizarLeyendaPartidos","renderizarLeyendaGradiente"], body: async () => {
+define({id: "aaa1735f", outputs: ["maplibregl","d3","DATA_BASE","MAPA_FALLBACK","STORAGE_MAP_KEY","metricaInvalidos","metricaCandidato","colorPartido","getStorage","cargarDatos","crearRecintos","crearMapa","crearCapasBase","aplicarColorMapa","persistirMapa","leerMapaInicial","popupHTML","renderizarLeyendaPartidos","renderizarLeyendaGradiente","storage","resultadosRaw","candidatos","timestamp","nombres"], body: async () => {
 const [{default: maplibregl}, d3, {DATA_BASE, MAPA_FALLBACK, STORAGE_MAP_KEY, metricaInvalidos, metricaCandidato, colorPartido, getStorage}, {cargarDatos, crearRecintos}, {crearMapa, crearCapasBase, aplicarColorMapa, persistirMapa, leerMapaInicial}, {popupHTML, renderizarLeyendaPartidos, renderizarLeyendaGradiente}] = await Promise.all([import("./_npm/maplibre-gl@5.21.1/13f11ada.js"), import("./_npm/d3@7.9.0/66d82917.js"), import("./_import/components/definiciones.c515d904.js"), import("./_import/components/datos.3acdffa2.js"), import("./_import/components/mapa.7324ef4a.js"), import("./_import/components/ui.e76af6b8.js")]);
 
-return {maplibregl,d3,DATA_BASE,MAPA_FALLBACK,STORAGE_MAP_KEY,metricaInvalidos,metricaCandidato,colorPartido,getStorage,cargarDatos,crearRecintos,crearMapa,crearCapasBase,aplicarColorMapa,persistirMapa,leerMapaInicial,popupHTML,renderizarLeyendaPartidos,renderizarLeyendaGradiente};
-}});
-
-define({id: "1867b20e", inputs: ["getStorage","cargarDatos","DATA_BASE"], outputs: ["storage","resultadosRaw","candidatos","timestamp","nombres","totalHab","maxHab","minHab"], body: async (getStorage,cargarDatos,DATA_BASE) => {
-const storage  = getStorage();
+const storage = getStorage();
 const { resultadosRaw, candidatos, timestamp } = await cargarDatos(DATA_BASE);
-const nombres  = candidatos.map(c => c.nombre);
-const totalHab = Object.values(resultadosRaw).reduce((s,v) => s + (v.habilitados||0), 0);
-const maxHab   = Math.max(...Object.values(resultadosRaw).map(v => v.habilitados||0));
-const minHab   = Math.min(...Object.values(resultadosRaw).filter(v=>v.habilitados>0).map(v=>v.habilitados));
-return {storage,resultadosRaw,candidatos,timestamp,nombres,totalHab,maxHab,minHab};
+const nombres = candidatos.map(c => c.nombre);
+return {maplibregl,d3,DATA_BASE,MAPA_FALLBACK,STORAGE_MAP_KEY,metricaInvalidos,metricaCandidato,colorPartido,getStorage,cargarDatos,crearRecintos,crearMapa,crearCapasBase,aplicarColorMapa,persistirMapa,leerMapaInicial,popupHTML,renderizarLeyendaPartidos,renderizarLeyendaGradiente,storage,resultadosRaw,candidatos,timestamp,nombres};
 }});
 
-define({id: "4e257fc7", mode: "inline", inputs: ["resultadosRaw","display"], body: async (resultadosRaw,display) => {
-display(await(
-Object.keys(resultadosRaw).length
-))
-}});
-
-define({id: "8bf10fae", mode: "inline", inputs: ["d3","totalHab","display"], body: async (d3,totalHab,display) => {
-display(await(
-d3.format(".3s")(totalHab)
-))
-}});
-
-define({id: "48ad4a49", mode: "inline", inputs: ["candidatos","display"], body: async (candidatos,display) => {
-display(await(
-candidatos.length
-))
-}});
-
-define({id: "4ee47195", mode: "inline", inputs: ["timestamp","display"], body: async (timestamp,display) => {
-display(await(
-timestamp ? `${timestamp.fecha} · ${timestamp.hora}` : ""
-))
-}});
-
-define({id: "a6702c7c", inputs: ["nombres","metricaInvalidos","candidatos","metricaCandidato","renderizarLeyendaPartidos","renderizarLeyendaGradiente","leerMapaInicial","storage","STORAGE_MAP_KEY","MAPA_FALLBACK","crearMapa","maplibregl","persistirMapa","crearRecintos","resultadosRaw","aplicarColorMapa","crearCapasBase","popupHTML","invalidation"], body: (nombres,metricaInvalidos,candidatos,metricaCandidato,renderizarLeyendaPartidos,renderizarLeyendaGradiente,leerMapaInicial,storage,STORAGE_MAP_KEY,MAPA_FALLBACK,crearMapa,maplibregl,persistirMapa,crearRecintos,resultadosRaw,aplicarColorMapa,crearCapasBase,popupHTML,invalidation) => {
+define({id: "c2132123", inputs: ["d3","resultadosRaw","candidatos","timestamp","nombres","metricaInvalidos","metricaCandidato","renderizarLeyendaPartidos","renderizarLeyendaGradiente","leerMapaInicial","storage","STORAGE_MAP_KEY","MAPA_FALLBACK","crearMapa","maplibregl","persistirMapa","crearRecintos","aplicarColorMapa","crearCapasBase","popupHTML","invalidation"], body: (d3,resultadosRaw,candidatos,timestamp,nombres,metricaInvalidos,metricaCandidato,renderizarLeyendaPartidos,renderizarLeyendaGradiente,leerMapaInicial,storage,STORAGE_MAP_KEY,MAPA_FALLBACK,crearMapa,maplibregl,persistirMapa,crearRecintos,aplicarColorMapa,crearCapasBase,popupHTML,invalidation) => {
 {
-  // ── Estado ──────────────────────────────────────────────────────────────
-  let modoActual      = "ganador";
-  let candidatoActual = nombres[0] ?? "";
+  // Estadísticas
+  const fmt  = d3.format(",");
+  const vals = Object.values(resultadosRaw);
+  const totalHab = vals.reduce((s,v) => s + (v.habilitados||0), 0);
+  const maxHab   = Math.max(...vals.map(v => v.habilitados||0));
+  const minHab   = Math.min(...vals.filter(v=>v.habilitados>0).map(v=>v.habilitados));
 
-  function getMetrica(modo, nom) {
+  document.querySelector("#s-rec").textContent = fmt(vals.length);
+  document.querySelector("#s-hab").textContent = d3.format(".3s")(totalHab);
+  document.querySelector("#s-can").textContent = candidatos.length;
+  document.querySelector("#s-ts").textContent  = timestamp ? `${timestamp.fecha} · ${timestamp.hora}` : "";
+  document.querySelector("#p-rec").textContent = fmt(vals.length);
+  document.querySelector("#p-hab").textContent = fmt(totalHab);
+  document.querySelector("#p-max").textContent = fmt(maxHab);
+  document.querySelector("#p-min").textContent = fmt(minHab);
+  document.querySelector("#p-can").textContent = candidatos.length;
+
+  // Poblar select candidatos
+  const sel = document.querySelector("#sel-cand");
+  nombres.forEach(n => {
+    const o = document.createElement("option");
+    o.value = o.textContent = n;
+    sel.appendChild(o);
+  });
+
+  // Estado
+  let modo  = "ganador";
+  let cand  = nombres[0] ?? "";
+
+  function getMetrica() {
     if (modo === "invalido") return metricaInvalidos;
     if (modo === "candidato") {
-      const pct = candidatos.find(c => c.nombre === nom)?.porcentaje_total ?? 0.3;
-      return metricaCandidato(nom, pct);
+      const pct = candidatos.find(c=>c.nombre===cand)?.porcentaje_total ?? 0.3;
+      return metricaCandidato(cand, pct);
     }
     return null;
   }
 
-  function actualizarLeyenda(modo, nom) {
-    const t1 = document.querySelector("#leyenda-titulo");
-    const t2 = document.querySelector("#legend-float-title");
+  function actualizarLeyenda() {
+    const t1 = document.querySelector("#leg-titulo");
+    const t2 = document.querySelector("#leg-float-titulo");
     if (modo === "ganador") {
-      if (t1) t1.textContent = "Partido ganador por recinto";
+      const txt = "Partido ganador por recinto";
+      if (t1) t1.textContent = txt;
       if (t2) t2.textContent = "Partido ganador";
-      renderizarLeyendaPartidos(candidatos, "legend-panel-content");
-      renderizarLeyendaPartidos(candidatos, "legend-container-float");
+      renderizarLeyendaPartidos(candidatos, "leg-panel");
+      renderizarLeyendaPartidos(candidatos, "leg-float");
     } else {
-      const m   = getMetrica(modo, nom);
-      const txt = modo === "invalido" ? "Votos blancos / nulos" : `% votos — ${nom}`;
+      const m   = getMetrica();
+      const txt = modo === "invalido" ? "Votos blancos / nulos" : `% votos · ${cand}`;
       if (t1) t1.textContent = txt;
       if (t2) t2.textContent = txt;
-      renderizarLeyendaGradiente(m, "legend-panel-content");
-      renderizarLeyendaGradiente(m, "legend-container-float");
+      renderizarLeyendaGradiente(m, "leg-panel");
+      renderizarLeyendaGradiente(m, "leg-float");
     }
   }
 
-  // ── Panel toggle ─────────────────────────────────────────────────────────
-  const panelEl = document.querySelector("#panel");
-  const fabEl   = document.querySelector("#panelFab");
-  fabEl?.addEventListener("click", () => {
-    panelEl.classList.toggle("collapsed");
-    fabEl.classList.toggle("collapsed");
+  // Panel toggle
+  const panel = document.querySelector("#panel");
+  const fab   = document.querySelector("#panelFab");
+  fab?.addEventListener("click", () => {
+    panel.classList.toggle("collapsed");
+    fab.classList.toggle("collapsed");
   });
 
-  // ── Leyenda toggle ───────────────────────────────────────────────────────
+  // Leyenda toggle
   document.querySelector("#legendBtn")?.addEventListener("click", () => {
     document.querySelector("#legendPanel").classList.toggle("open");
     document.querySelector("#legendBtn").classList.toggle("active");
   });
 
-  // ── Mapa ─────────────────────────────────────────────────────────────────
+  // Mapa
   const mapaInicial = leerMapaInicial(storage, STORAGE_MAP_KEY, MAPA_FALLBACK);
   const map  = crearMapa("#mapa", mapaInicial);
   const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "none" });
   persistirMapa(map, storage, STORAGE_MAP_KEY);
 
   function actualizar() {
-    const metrica  = getMetrica(modoActual, candidatoActual);
-    const recintos = crearRecintos(resultadosRaw, modoActual, candidatoActual);
+    const recintos = crearRecintos(resultadosRaw, modo, cand);
     map.getSource("recintos")?.setData(recintos);
-    aplicarColorMapa(map, modoActual, metrica);
-    actualizarLeyenda(modoActual, candidatoActual);
+    aplicarColorMapa(map, modo, getMetrica());
+    actualizarLeyenda();
   }
 
   map.on("load", () => {
-    const metrica  = getMetrica(modoActual, candidatoActual);
-    const recintos = crearRecintos(resultadosRaw, modoActual, candidatoActual);
-    crearCapasBase(map, recintos, modoActual, metrica);
-    actualizarLeyenda(modoActual, candidatoActual);
+    crearCapasBase(map, crearRecintos(resultadosRaw, modo, cand), modo, getMetrica());
+    actualizarLeyenda();
   });
 
-  // ── Botones de modo ──────────────────────────────────────────────────────
+  // Botones modo
   document.querySelectorAll(".mode-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      modoActual = btn.dataset.modo;
-      const sect = document.querySelector("#sect-candidato");
-      if (sect) sect.style.display = modoActual === "candidato" ? "" : "none";
+      modo = btn.dataset.modo;
+      const s = document.querySelector("#sect-cand");
+      if (s) s.style.display = modo === "candidato" ? "" : "none";
       actualizar();
     });
   });
 
-  // ── Selector candidato ───────────────────────────────────────────────────
-  document.querySelector("#sel-candidato")?.addEventListener("change", e => {
-    candidatoActual = e.target.value;
-    actualizar();
-  });
+  // Selector candidato
+  sel?.addEventListener("change", e => { cand = e.target.value; actualizar(); });
 
-  // ── Hover / click popup ──────────────────────────────────────────────────
+  // Popup
   let locked = false;
   map.on("mouseenter", "recintos_hover", e => {
     map.getCanvas().style.cursor = "pointer";
     const f = e.features?.[0];
-    if (!f) return;
-    popup.setLngLat(f.geometry.coordinates)
-         .setHTML(popupHTML(f, candidatoActual))
-         .addTo(map);
+    if (f) popup.setLngLat(f.geometry.coordinates).setHTML(popupHTML(f, cand)).addTo(map);
   });
   map.on("mouseleave", "recintos_hover", () => {
     map.getCanvas().style.cursor = "";
@@ -202,9 +188,8 @@ define({id: "a6702c7c", inputs: ["nombres","metricaInvalidos","candidatos","metr
   });
   map.on("click", "recintos_hover", () => { locked = true; });
   map.on("click", e => {
-    if (!map.queryRenderedFeatures(e.point, { layers: ["recintos_hover"] }).length) {
-      locked = false;
-      popup.remove();
+    if (!map.queryRenderedFeatures(e.point, {layers:["recintos_hover"]}).length) {
+      locked = false; popup.remove();
     }
   });
 
@@ -218,9 +203,8 @@ define({id: "a6702c7c", inputs: ["nombres","metricaInvalidos","candidatos","metr
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <link rel="stylesheet" type="text/css" href="https://unpkg.com/maplibre-gl@4.0.2/dist/maplibre-gl.css">
-<link rel="stylesheet" type="text/css" href="./_file/index.f661e370.css">
-<div class="observablehq observablehq--block"><!--:c0b59e78:--></div>
-<div class="observablehq observablehq--block"><!--:1867b20e:--></div>
+<link rel="stylesheet" type="text/css" href="./_file/index.e4e9d652.css">
+<div class="observablehq observablehq--block"><!--:aaa1735f:--></div>
 <div class="app">
   <header class="header">
     <div class="header__brand">
@@ -230,14 +214,14 @@ define({id: "a6702c7c", inputs: ["nombres","metricaInvalidos","candidatos","metr
       </div>
     </div>
     <div class="header__stats">
-      <div class="stat-chip green"><span class="num"><observablehq-loading></observablehq-loading><!--:4e257fc7:--></span><span class="lbl">recintos</span></div>
-      <div class="stat-chip amber"><span class="num"><observablehq-loading></observablehq-loading><!--:8bf10fae:--></span><span class="lbl">habilitados</span></div>
-      <div class="stat-chip purple"><span class="num"><observablehq-loading></observablehq-loading><!--:48ad4a49:--></span><span class="lbl">candidatos</span></div>
+      <div class="stat-chip green"><span class="num" id="s-rec">—</span><span class="lbl">recintos</span></div>
+      <div class="stat-chip amber"><span class="num" id="s-hab">—</span><span class="lbl">habilitados</span></div>
+      <div class="stat-chip purple"><span class="num" id="s-can">—</span><span class="lbl">candidatos</span></div>
     </div>
-    <div class="header__timestamp"><observablehq-loading></observablehq-loading><!--:4ee47195:--></div>
+    <div class="header__timestamp" id="s-ts"></div>
   </header>
   <div class="layout">
-    <button class="panel-toggle-fab" id="panelFab" title="Panel">
+    <button class="panel-toggle-fab" id="panelFab">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
 <pre><code>&lt;aside class="panel" id="panel"&gt;
@@ -249,23 +233,21 @@ define({id: "a6702c7c", inputs: ["nombres","metricaInvalidos","candidatos","metr
       &lt;button class="mode-btn" data-modo="invalido"&gt;&lt;span class="mode-btn__dot"&gt;&lt;/span&gt;Votos blancos / nulos&lt;/button&gt;
     &lt;/div&gt;
   &lt;/div&gt;
-  &lt;div class="panel-section" id="sect-candidato" style="display:none"&gt;
+  &lt;div class="panel-section" id="sect-cand" style="display:none"&gt;
     &lt;label class="filter-label"&gt;Candidato&lt;/label&gt;
-    &lt;select class="filter-select" id="sel-candidato"&gt;
-      ${nombres.map(n =&gt; `&lt;option value="${n}"&gt;${n}&lt;/option&gt;`).join("")}
-    &lt;/select&gt;
+    &lt;select class="filter-select" id="sel-cand"&gt;&lt;/select&gt;
   &lt;/div&gt;
   &lt;div class="panel-section"&gt;
-    &lt;label class="filter-label" id="leyenda-titulo"&gt;Partido ganador por recinto&lt;/label&gt;
-    &lt;div id="legend-panel-content"&gt;&lt;/div&gt;
+    &lt;label class="filter-label" id="leg-titulo"&gt;Partido ganador por recinto&lt;/label&gt;
+    &lt;div id="leg-panel"&gt;&lt;/div&gt;
   &lt;/div&gt;
   &lt;div class="panel-section"&gt;
     &lt;label class="filter-label"&gt;Estadísticas&lt;/label&gt;
-    &lt;div class="stat-row"&gt;&lt;span class="stat-lbl"&gt;Recintos totales&lt;/span&gt;&lt;span class="stat-val accent"&gt;${d3.format(",")(Object.keys(resultadosRaw).length)}&lt;/span&gt;&lt;/div&gt;
-    &lt;div class="stat-row"&gt;&lt;span class="stat-lbl"&gt;Total habilitados&lt;/span&gt;&lt;span class="stat-val accent"&gt;${d3.format(",")(totalHab)}&lt;/span&gt;&lt;/div&gt;
-    &lt;div class="stat-row"&gt;&lt;span class="stat-lbl"&gt;Mayor recinto&lt;/span&gt;&lt;span class="stat-val"&gt;${d3.format(",")(maxHab)}&lt;/span&gt;&lt;/div&gt;
-    &lt;div class="stat-row"&gt;&lt;span class="stat-lbl"&gt;Menor recinto&lt;/span&gt;&lt;span class="stat-val"&gt;${d3.format(",")(minHab)}&lt;/span&gt;&lt;/div&gt;
-    &lt;div class="stat-row"&gt;&lt;span class="stat-lbl"&gt;Candidatos&lt;/span&gt;&lt;span class="stat-val"&gt;${candidatos.length}&lt;/span&gt;&lt;/div&gt;
+    &lt;div class="stat-row"&gt;&lt;span class="stat-lbl"&gt;Recintos&lt;/span&gt;&lt;span class="stat-val accent" id="p-rec"&gt;—&lt;/span&gt;&lt;/div&gt;
+    &lt;div class="stat-row"&gt;&lt;span class="stat-lbl"&gt;Total habilitados&lt;/span&gt;&lt;span class="stat-val accent" id="p-hab"&gt;—&lt;/span&gt;&lt;/div&gt;
+    &lt;div class="stat-row"&gt;&lt;span class="stat-lbl"&gt;Mayor recinto&lt;/span&gt;&lt;span class="stat-val" id="p-max"&gt;—&lt;/span&gt;&lt;/div&gt;
+    &lt;div class="stat-row"&gt;&lt;span class="stat-lbl"&gt;Menor recinto&lt;/span&gt;&lt;span class="stat-val" id="p-min"&gt;—&lt;/span&gt;&lt;/div&gt;
+    &lt;div class="stat-row"&gt;&lt;span class="stat-lbl"&gt;Candidatos&lt;/span&gt;&lt;span class="stat-val" id="p-can"&gt;—&lt;/span&gt;&lt;/div&gt;
   &lt;/div&gt;
 &lt;/aside&gt;
 
@@ -278,8 +260,8 @@ define({id: "a6702c7c", inputs: ["nombres","metricaInvalidos","candidatos","metr
         &lt;span class="ml-header-title"&gt;Leyenda&lt;/span&gt;
       &lt;/div&gt;
       &lt;div class="ml-block"&gt;
-        &lt;div class="ml-block-title" id="legend-float-title"&gt;Partido ganador&lt;/div&gt;
-        &lt;div id="legend-container-float"&gt;&lt;/div&gt;
+        &lt;div class="ml-block-title" id="leg-float-titulo"&gt;Partido ganador&lt;/div&gt;
+        &lt;div id="leg-float"&gt;&lt;/div&gt;
       &lt;/div&gt;
     &lt;/div&gt;
     &lt;button class="map-legend-btn" id="legendBtn"&gt;
@@ -291,7 +273,7 @@ define({id: "a6702c7c", inputs: ["nombres","metricaInvalidos","candidatos","metr
 </code></pre>
   </div>
 </div>
-<div class="observablehq observablehq--block"><!--:a6702c7c:--></div>
+<div class="observablehq observablehq--block"><!--:c2132123:--></div>
 </main>
 </div>
 </body>

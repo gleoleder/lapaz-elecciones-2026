@@ -32,15 +32,20 @@ body {
   color: var(--text);
   font-family: var(--f);
   overflow: hidden;
-  height: 100vh; height: 100dvh;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Layout ────────────────────────────────────────────────────────────── */
+/* Observable Framework wrapper overrides */
+#observablehq-main, #observablehq-center, .observablehq--block,
+[class*="observablehq"] { all: unset; }
+
+/* ── App: fijo sobre todo el viewport ─────────────────────────────────── */
 .app {
+  position: fixed;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  height: 100vh; height: 100dvh;
+  z-index: 1;
 }
 
 /* ── Header ────────────────────────────────────────────────────────────── */
