@@ -181,6 +181,16 @@
 
   </div>
 
+  <!-- ── Overlay ficha recinto (siempre centrado) ── -->
+  <div class="rc-backdrop" id="rcBackdrop"></div>
+  <div class="rc-sheet" id="rcSheet" role="dialog" aria-modal="true">
+    <div class="rc-handle"></div>
+    <button class="rc-close" id="rcClose" aria-label="Cerrar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="rc-body" id="rcBody"></div>
+  </div>
+
   <div class="loader" id="loader">
     <div class="loader-ring"></div>
     <div class="loader-txt">Cargando datos electorales...</div>

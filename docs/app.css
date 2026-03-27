@@ -170,6 +170,74 @@ body {
 .lp-body { padding:10px 14px; }
 .lp-subtitle { font:700 .58rem var(--f); color:var(--text3); text-transform:uppercase; letter-spacing:.07em; margin-bottom:7px; }
 
+/* ── Overlay ficha recinto ── */
+.rc-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: rcFadeIn .18s ease;
+}
+.rc-backdrop.open { display: block; }
+
+@keyframes rcFadeIn { from{opacity:0} to{opacity:1} }
+@keyframes rcSlideUp { from{opacity:0;transform:translate(-50%,-44%)} to{opacity:1;transform:translate(-50%,-50%)} }
+@keyframes rcSlideUpMob { from{transform:translateY(100%)} to{transform:translateY(0)} }
+
+.rc-sheet {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 201;
+  width: min(340px, 92vw);
+  max-height: min(88dvh, 88vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  box-shadow: 0 24px 60px rgba(0,0,0,.8);
+  scrollbar-width: thin;
+  scrollbar-color: var(--p2) transparent;
+  animation: rcSlideUp .22s cubic-bezier(.32,0,.67,0);
+}
+.rc-sheet.open { display: block; }
+.rc-sheet::-webkit-scrollbar { width: 3px; }
+.rc-sheet::-webkit-scrollbar-thumb { background: var(--p2); border-radius: 3px; }
+
+.rc-handle {
+  display: none;
+  width: 36px; height: 4px;
+  background: rgba(255,255,255,.2);
+  border-radius: 4px;
+  margin: 10px auto 0;
+}
+
+.rc-close {
+  position: sticky;
+  top: 8px;
+  float: right;
+  margin: 8px 8px 0 0;
+  z-index: 2;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.1);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--tr);
+}
+.rc-close:hover { background: rgba(255,255,255,.18); color: var(--text); }
+
+.rc-body { overflow: hidden; }
+.rc-body .pp { width: 100%; border-radius: 0; box-shadow: none; border: none; }
+
 /* ── Popup ── */
 .pp { background:var(--surface); border:1px solid var(--border2); border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,.6); width:300px; overflow:hidden; font-family:var(--f); }
 .pp-head { padding:12px 14px; border-bottom:1px solid var(--border); background:var(--surface2); }
@@ -270,6 +338,23 @@ body {
 /* ══════════════════════════════════════════════════
    RESPONSIVE — OPTIMIZACIÓN MÓVIL MULTIDISPOSITIVO
    ══════════════════════════════════════════════════ */
+
+/* ── Overlay bottom-sheet en móvil ── */
+@media (max-width: 768px) {
+  .rc-sheet {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
+    width: 100%;
+    max-height: 82dvh;
+    border-radius: 20px 20px 0 0;
+    animation: rcSlideUpMob .26s cubic-bezier(.32,0,.67,0);
+  }
+  .rc-handle { display: block; }
+  .rc-close  { top: 12px; }
+}
 
 /* ── Tablet / phablet (≤ 768px) ── */
 @media (max-width: 768px) {

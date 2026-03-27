@@ -41,7 +41,7 @@ let basemapActual = "Claro";
 
 // ── Estado ─────────────────────────────────────────────────────────────────
 let resultados = {}, candidatos = [], modo = "ganador", candActual = "";
-let map, popup;
+let map;
 let mostrarPuntos = true;
 let tabActual = "mapa";
 let kdePartidoActual = "";
@@ -178,8 +178,6 @@ function crearMapa() {
     localStorage.setItem("lp26_map", JSON.stringify({center:[c.lng,c.lat], zoom:map.getZoom()}));
   });
 
-  popup = new maplibregl.Popup({ closeButton:true, closeOnClick:false, maxWidth:"none" });
-
   map.on("load", () => {
     agregarCapas();
     kdeInit(map);
@@ -297,38 +295,43 @@ function popupHTML(props) {
   return `<div class="pp"><div class="pp-head"><div class="pp-winner-row">${fotoEl(gan,54)}<div class="pp-info"><div class="pp-title">${props.recinto??"Recinto sin nombre"}</div><div class="pp-badge" style="background:${cg}18;color:${cg};border-color:${cg}44">${gan} · ${fmt(props.ganador)}</div></div></div></div><div class="pp-stats"><div class="pp-stat"><span class="pp-sv">${fmtN(props.habilitados)}</span><span class="pp-sl">Habilitados</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.validos)}</span><span class="pp-sl">Válidos</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.blancos)}</span><span class="pp-sl">Blancos</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.nulos)}</span><span class="pp-sl">Nulos</span></div></div>${analisisHTML(lista,props.invalido??0)}<div class="pp-lista">${barras}</div><div class="pp-foot">Municipio de La Paz · Elecciones 2026</div></div>`;
 }
 
+// ── Overlay ficha recinto ──────────────────────────────────────────────────
+function abrirFicha(props, coords) {
+  document.querySelector("#rcBody").innerHTML = popupHTML(props);
+  document.querySelector("#rcBackdrop").classList.add("open");
+  document.querySelector("#rcSheet").classList.add("open");
+
+  // Centrar el mapa en el recinto (con offset para el panel en desktop)
+  const panelAbierto = !document.querySelector("#panel").classList.contains("collapsed");
+  const offsetX = (panelAbierto && window.innerWidth > 768) ? 140 : 0;
+  map.easeTo({ center: coords, offset: [offsetX, 0], duration: 380, essential: true });
+}
+
+function cerrarFicha() {
+  document.querySelector("#rcBackdrop").classList.remove("open");
+  document.querySelector("#rcSheet").classList.remove("open");
+}
+
 function setupPopup() {
-  let locked = false;
-  map.off("mouseenter","hover");
-  map.off("mouseleave","hover");
-  map.off("click","hover");
+  // Cursor pointer al pasar sobre recintos
+  map.on("mouseenter","hover", () => { map.getCanvas().style.cursor = "pointer"; });
+  map.on("mouseleave","hover", () => { map.getCanvas().style.cursor = ""; });
 
-  const esMovil = () => window.innerWidth <= 768;
-
-  // Desktop: hover abre, click fija
-  map.on("mouseenter","hover", e => {
-    if (esMovil()) return;
-    map.getCanvas().style.cursor = "pointer";
-    const f = e.features?.[0];
-    if (f) popup.setLngLat(f.geometry.coordinates).setHTML(popupHTML(f.properties)).addTo(map);
-  });
-  map.on("mouseleave","hover", () => {
-    if (esMovil()) return;
-    map.getCanvas().style.cursor = "";
-    if (!locked) popup.remove();
-  });
-
-  // Click/tap: abre Y fija en cualquier dispositivo
+  // Click / tap → abrir ficha centrada
   map.on("click","hover", e => {
     const f = e.features?.[0];
-    if (f) popup.setLngLat(f.geometry.coordinates).setHTML(popupHTML(f.properties)).addTo(map);
-    locked = true;
+    if (!f) return;
+    abrirFicha(f.properties, f.geometry.coordinates);
   });
+
+  // Cerrar al hacer clic en el fondo del mapa
   map.on("click", e => {
-    if (!map.queryRenderedFeatures(e.point,{layers:["hover"]}).length) {
-      locked = false; popup.remove();
-    }
+    if (!map.queryRenderedFeatures(e.point, {layers:["hover"]}).length) cerrarFicha();
   });
+
+  // Botón cerrar y backdrop
+  document.querySelector("#rcClose")?.addEventListener("click", cerrarFicha);
+  document.querySelector("#rcBackdrop")?.addEventListener("click", cerrarFicha);
 }
 
 // ── KDE Setup ──────────────────────────────────────────────────────────────
