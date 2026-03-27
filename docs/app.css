@@ -187,7 +187,7 @@ body {
 .pp-lista { padding:8px 12px; max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; scrollbar-width:thin; scrollbar-color:var(--p2) transparent; }
 .cand { font-size:.72rem; }
 .cand-row { display:flex; align-items:center; gap:5px; margin-bottom:2px; }
-.cand-foto { width:22px; height:22px; border-radius:50%; object-fit:cover; flex-shrink:0; border:1.5px solid rgba(255,255,255,.15); }
+.cand-foto { width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0; border:1.5px solid rgba(255,255,255,.15); }
 .cand-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .cand-nom { flex:1; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:175px; }
 .cand-pct { font:700 .7rem var(--fm); flex-shrink:0; }
@@ -267,11 +267,104 @@ body {
 .kde-pal-name  { font:600 .6rem var(--f); color:var(--text3); width:46px; text-align:right; flex-shrink:0; }
 .kde-pal-btn.active .kde-pal-name { color:var(--p); }
 
-/* ── Responsive ── */
-@media(max-width:768px){
-  .header-sub,.header-ts{display:none}
-  .panel{width:82%;max-width:300px}
-  .panel-fab.open{left:min(82%,300px)}
-  .pp{width:260px}
+/* ══════════════════════════════════════════════════
+   RESPONSIVE — OPTIMIZACIÓN MÓVIL MULTIDISPOSITIVO
+   ══════════════════════════════════════════════════ */
+
+/* ── Tablet / phablet (≤ 768px) ── */
+@media (max-width: 768px) {
+  /* Header compacto */
+  .header { height: 52px; padding: 0 10px; gap: 8px; }
+  .header-sub, .header-ts { display: none; }
+  .header-title { font-size: .78rem; }
+  .btn-icon { width: 38px; height: 38px; }
+
+  /* Panel — casi pantalla completa en móvil */
+  .panel {
+    width: 88%;
+    max-width: 320px;
+    border-radius: 0 16px 16px 0;
+    box-shadow: 8px 0 40px rgba(0,0,0,.7);
+  }
+  .panel-fab.open { left: min(88%, 320px); }
+  .panel-fab { width: 32px; height: 60px; }
+
+  /* Layout */
+  .layout {
+    height: calc(100dvh - 52px);
+    height: calc(100vh - 52px);
+  }
+
+  /* Tabs — touch targets */
+  .tab-btn { padding: 11px 4px; font-size: .66rem; min-height: 44px; }
+
+  /* Mode buttons — touch */
+  .mode-btn { padding: 10px 12px; font-size: .78rem; min-height: 44px; }
+
+  /* Popup */
+  .pp { width: min(310px, 94vw); }
+  .pp-lista { max-height: 160px; }
+
+  /* Sliders touch */
+  .kde-range { height: 5px; }
+  .kde-range::-webkit-slider-thumb { width: 22px; height: 22px; }
+  .kde-row { margin-bottom: 10px; }
+
+  /* Toggle táctil */
+  .toggle-sw { width: 46px; height: 26px; }
+  .toggle-track::before { width: 20px; height: 20px; }
+  .toggle-sw input:checked + .toggle-track::before { transform: translateX(20px); }
+  .kde-toggle-lbl { font-size: .72rem; }
+
+  /* Controles del mapa */
+  .maplibregl-ctrl-top-right { right: 8px !important; }
+
+  /* Leyenda flotante */
+  .legend-fab { bottom: 56px; right: 8px; }
+  .legend-panel { min-width: 190px; max-width: 210px; }
+
+  /* Crédito — oculto en móvil */
+  .map-credit { display: none; }
+
+  /* Basemap grid — 2 columnas ajustadas */
+  .basemap-btn { font-size: .58rem; padding: 5px 3px; }
+  .bm-preview { height: 18px; }
+
+  /* Paleta */
+  .kde-pal-btn { padding: 6px 8px; }
 }
-@media(max-width:480px){ .header-stats{gap:3px} }
+
+/* ── Teléfono estándar (≤ 480px) ── */
+@media (max-width: 480px) {
+  .header { height: 48px; padding: 0 8px; }
+  .header-title { font-size: .73rem; }
+  .header-stats { gap: 4px; margin-left: 6px; }
+  .stat-chip { padding: 2px 7px; }
+  .stat-num { font-size: .68rem; }
+  .stat-lbl { font-size: .38rem; }
+
+  /* Popup: stats 2 columnas y lista más corta */
+  .pp { width: min(290px, 96vw); }
+  .pp-stats { grid-template-columns: repeat(2, 1fr); }
+  .pp-lista { max-height: 130px; }
+  .pp-head { padding: 10px 12px; }
+
+  /* Panel */
+  .panel { width: 92%; max-width: 340px; }
+  .panel-fab.open { left: min(92%, 340px); }
+  .panel-section { padding: 9px 10px; }
+
+  /* KDE teoría más compacta */
+  .kde-teoria { padding: 8px 10px; }
+  .kde-teoria p { font-size: .6rem; }
+}
+
+/* ── Teléfono pequeño (≤ 375px — iPhone SE, etc.) ── */
+@media (max-width: 375px) {
+  .header-title { font-size: .68rem; }
+  .stat-chip.amber { display: none; }   /* Ocultar "habilitados" para ganar espacio */
+  .pp { width: 97vw; }
+  .pp-stats { grid-template-columns: repeat(2, 1fr); }
+  .tab-btn { font-size: .6rem; gap: 3px; }
+  .tab-btn svg { width: 10px; height: 10px; }
+}

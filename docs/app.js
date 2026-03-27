@@ -292,28 +292,38 @@ function popupHTML(props) {
   const cg    = color(gan);
   const barras = lista.map(([nom,pct]) => {
     const c = color(nom), eG = nom===gan, eS = nom===candActual;
-    return `<div class="cand${eG?" winner":""}"><div class="cand-row">${fotoEl(nom,20)}<span class="cand-nom">${nom}</span><span class="cand-pct" style="color:${c}">${fmt(pct)}</span></div><div class="cand-bg"><div class="cand-bar" style="width:${(pct*100).toFixed(1)}%;background:${c}${eG||eS?"":"88"}"></div></div></div>`;
+    return `<div class="cand${eG?" winner":""}"><div class="cand-row">${fotoEl(nom,30)}<span class="cand-nom">${nom}</span><span class="cand-pct" style="color:${c}">${fmt(pct)}</span></div><div class="cand-bg"><div class="cand-bar" style="width:${(pct*100).toFixed(1)}%;background:${c}${eG||eS?"":"88"}"></div></div></div>`;
   }).join("");
-  return `<div class="pp"><div class="pp-head"><div class="pp-winner-row">${fotoEl(gan,38)}<div class="pp-info"><div class="pp-title">${props.recinto??"Recinto sin nombre"}</div><div class="pp-badge" style="background:${cg}18;color:${cg};border-color:${cg}44">${gan} · ${fmt(props.ganador)}</div></div></div></div><div class="pp-stats"><div class="pp-stat"><span class="pp-sv">${fmtN(props.habilitados)}</span><span class="pp-sl">Habilitados</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.validos)}</span><span class="pp-sl">Válidos</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.blancos)}</span><span class="pp-sl">Blancos</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.nulos)}</span><span class="pp-sl">Nulos</span></div></div>${analisisHTML(lista,props.invalido??0)}<div class="pp-lista">${barras}</div><div class="pp-foot">Municipio de La Paz · Elecciones 2026</div></div>`;
+  return `<div class="pp"><div class="pp-head"><div class="pp-winner-row">${fotoEl(gan,54)}<div class="pp-info"><div class="pp-title">${props.recinto??"Recinto sin nombre"}</div><div class="pp-badge" style="background:${cg}18;color:${cg};border-color:${cg}44">${gan} · ${fmt(props.ganador)}</div></div></div></div><div class="pp-stats"><div class="pp-stat"><span class="pp-sv">${fmtN(props.habilitados)}</span><span class="pp-sl">Habilitados</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.validos)}</span><span class="pp-sl">Válidos</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.blancos)}</span><span class="pp-sl">Blancos</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.nulos)}</span><span class="pp-sl">Nulos</span></div></div>${analisisHTML(lista,props.invalido??0)}<div class="pp-lista">${barras}</div><div class="pp-foot">Municipio de La Paz · Elecciones 2026</div></div>`;
 }
 
 function setupPopup() {
-  // Limpiar listeners previos eliminando y re-añadiendo layer hover
   let locked = false;
   map.off("mouseenter","hover");
   map.off("mouseleave","hover");
   map.off("click","hover");
 
+  const esMovil = () => window.innerWidth <= 768;
+
+  // Desktop: hover abre, click fija
   map.on("mouseenter","hover", e => {
+    if (esMovil()) return;
     map.getCanvas().style.cursor = "pointer";
     const f = e.features?.[0];
     if (f) popup.setLngLat(f.geometry.coordinates).setHTML(popupHTML(f.properties)).addTo(map);
   });
   map.on("mouseleave","hover", () => {
+    if (esMovil()) return;
     map.getCanvas().style.cursor = "";
     if (!locked) popup.remove();
   });
-  map.on("click","hover", () => { locked = true; });
+
+  // Click/tap: abre Y fija en cualquier dispositivo
+  map.on("click","hover", e => {
+    const f = e.features?.[0];
+    if (f) popup.setLngLat(f.geometry.coordinates).setHTML(popupHTML(f.properties)).addTo(map);
+    locked = true;
+  });
   map.on("click", e => {
     if (!map.queryRenderedFeatures(e.point,{layers:["hover"]}).length) {
       locked = false; popup.remove();
@@ -376,6 +386,14 @@ function setupUI() {
   // Panel toggle
   const panel = document.querySelector("#panel");
   const fab   = document.querySelector("#panelFab");
+
+  // En móvil el panel arranca cerrado
+  if (window.innerWidth <= 768) {
+    panel.classList.add("collapsed");
+    fab.classList.remove("open");
+    fab.classList.add("closed");
+  }
+
   [document.querySelector("#btnPanel"), fab].forEach(b => b?.addEventListener("click", () => {
     panel.classList.toggle("collapsed");
     fab.classList.toggle("open");
