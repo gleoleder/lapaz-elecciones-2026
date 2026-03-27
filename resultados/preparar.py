@@ -176,6 +176,20 @@ def main():
         resultados[codigo] = entry
 
     # --- Guardar JSONs ---
+    # Reemplazar NaN/Inf por None para JSON válido
+    import math
+    def limpiar(obj):
+        if isinstance(obj, dict):
+            return {k: limpiar(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [limpiar(v) for v in obj]
+        if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+            return None
+        return obj
+
+    resultados = limpiar(resultados)
+    candidatos = limpiar(candidatos)
+
     # En resultados/ (para GitHub raw URL en producción)
     out_resultados = BASE / "resultados_lapaz.json"
     out_candidatos = BASE / "candidatos.json"
