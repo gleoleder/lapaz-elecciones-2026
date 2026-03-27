@@ -33,15 +33,16 @@ function kpColor(t, paleta) {
 }
 
 // ── Estado ────────────────────────────────────────────────────────────────
-let _map      = null;
-let _canvas   = null;
-let _ctx      = null;
-let _activo   = false;
-let _radio    = 900;
-let _opacidad = 0.82;
-let _paleta   = 'Fuego';
-let _puntos   = [];
-let _raf      = null;
+let _map       = null;
+let _canvas    = null;
+let _ctx       = null;
+let _activo    = false;
+let _radio     = 900;
+let _opacidad  = 0.82;
+let _paleta    = 'Fuego';
+let _puntos    = [];
+let _raf       = null;
+let _drawState = null;  // { center: LngLat, zoom: number } en el último redibujado completo
 
 // ── API pública ───────────────────────────────────────────────────────────
 
@@ -66,9 +67,11 @@ function kdeInit(mapInstance) {
   mapDiv.appendChild(_canvas);
   _ctx = _canvas.getContext('2d');
 
-  mapInstance.on('move',   _sched);
-  mapInstance.on('zoom',   _sched);
-  mapInstance.on('resize', _sched);
+  // Durante el movimiento: solo aplicar CSS transform (sin recálculo)
+  mapInstance.on('move',    _onMove);
+  // Al terminar el movimiento: recalcular el KDE completo
+  mapInstance.on('moveend', _sched);
+  mapInstance.on('resize',  _sched);
 }
 
 /**
@@ -103,16 +106,52 @@ function kdeSetPaleta(n)     { _paleta   = n;    if (_activo) _sched(); }
 
 function kdeToggle(on) {
   _activo = !!on;
-  if (_canvas) _canvas.style.display = _activo ? 'block' : 'none';
-  if (_activo) _sched();
-  else { if (_ctx && _canvas) _ctx.clearRect(0, 0, _canvas.width, _canvas.height); }
+  if (_canvas) {
+    _canvas.style.display         = _activo ? 'block' : 'none';
+    _canvas.style.transform       = '';
+    _canvas.style.transformOrigin = '';
+  }
+  if (_activo) { _drawState = null; _sched(); }
+  else { _drawState = null; if (_ctx && _canvas) _ctx.clearRect(0, 0, _canvas.width, _canvas.height); }
 }
 
 // ── Internos ──────────────────────────────────────────────────────────────
 
+/**
+ * Durante pan/zoom: desplaza el canvas con CSS transform para que siga
+ * el mapa sin recalcular el KDE. Costo: ~0 CPU, completamente fluido.
+ */
+function _onMove() {
+  if (!_activo || !_drawState || !_canvas) return;
+  const W = _canvas.offsetWidth;
+  const H = _canvas.offsetHeight;
+  if (!W || !H) return;
+
+  // ¿Dónde está ahora en pantalla el punto geográfico que era el centro al dibujar?
+  const px    = _map.project(_drawState.center);
+  // Factor de escala por cambio de zoom
+  const scale = Math.pow(2, _map.getZoom() - _drawState.zoom);
+  // Traslación: mover el canvas para que ese punto siga en su sitio
+  const tx = px.x - W / 2;
+  const ty = px.y - H / 2;
+
+  _canvas.style.transformOrigin = `${W / 2}px ${H / 2}px`;
+  _canvas.style.transform       = `translate(${tx}px,${ty}px) scale(${scale})`;
+}
+
+/**
+ * Al terminar el movimiento: limpia el transform y recalcula el KDE completo.
+ */
 function _sched() {
   if (_raf) cancelAnimationFrame(_raf);
-  _raf = requestAnimationFrame(_draw);
+  _raf = requestAnimationFrame(() => {
+    // Resetear transform CSS antes de redibujar
+    if (_canvas) {
+      _canvas.style.transform       = '';
+      _canvas.style.transformOrigin = '';
+    }
+    _draw();
+  });
 }
 
 function _draw() {
@@ -198,4 +237,8 @@ function _draw() {
   _ctx.imageSmoothingEnabled = true;
   _ctx.imageSmoothingQuality = 'high';
   _ctx.drawImage(off, 0, 0, W, H);
+
+  // Guardar el estado del mapa en este momento para que _onMove pueda
+  // calcular correctamente el transform durante el siguiente pan/zoom
+  _drawState = { center: _map.getCenter(), zoom: _map.getZoom() };
 }
