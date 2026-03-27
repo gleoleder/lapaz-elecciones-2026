@@ -11,12 +11,41 @@ const COLORES = {
 };
 const COLOR_DEF = "#9e9e9e";
 const color = p => COLORES[p] ?? COLOR_DEF;
-const fmt   = n => n == null ? "—" : (n * 100).toFixed(1) + "%";
-const fmtN  = n => n == null ? "—" : n.toLocaleString("es-BO");
+const fmt  = n => n == null ? "—" : (n * 100).toFixed(1) + "%";
+const fmtN = n => n == null ? "—" : n.toLocaleString("es-BO");
+
+// ── Mapas base disponibles ─────────────────────────────────────────────────
+const BASEMAPS = {
+  "Claro": {
+    style: "https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json",
+    labels: "https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"
+  },
+  "Oscuro": {
+    style: "https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json",
+    labels: "https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png"
+  },
+  "Satélite": {
+    style: {
+      version: 8,
+      sources: { sat: { type:"raster", tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize:256 } },
+      layers:  [{ id:"sat-bg", type:"raster", source:"sat" }]
+    },
+    labels: "https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"
+  },
+  "Sin color": {
+    style: "https://basemaps.cartocdn.com/gl/voyager-nolabels-gl-style/style.json",
+    labels: "https://a.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png"
+  }
+};
+let basemapActual = "Claro";
 
 // ── Estado ─────────────────────────────────────────────────────────────────
 let resultados = {}, candidatos = [], modo = "ganador", candActual = "";
 let map, popup;
+let mostrarPuntos = true;
+let tabActual = "mapa";
+let kdePartidoActual = "";
+let kdePaletaActual  = "Fuego";
 
 // ── Inicialización ─────────────────────────────────────────────────────────
 async function init() {
@@ -112,7 +141,6 @@ function colorExpr() {
   if (modo === "invalido") {
     return ["interpolate",["linear"],["coalesce",["to-number",["get","invalido"]],0.05],0.03,"#e8f5e9",0.2,"#66bb6a",0.4,"#1b5e20"];
   }
-  // candidato
   const c = color(candActual);
   const pct = candidatos.find(x=>x.nombre===candActual)?.porcentaje_total ?? 0.3;
   const max = Math.min(Math.max(pct * 2.2, 0.25), 0.95);
@@ -135,14 +163,15 @@ function crearMapa() {
 
   map = new maplibregl.Map({
     container: "map",
-    style: "https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json",
+    style: BASEMAPS["Claro"].style,
     center, zoom,
     minZoom: 10, maxZoom: 18,
     attributionControl: false,
   });
 
-  map.addControl(new maplibregl.NavigationControl(), "bottom-right");
-  map.addControl(new maplibregl.GeolocateControl({ positionOptions:{enableHighAccuracy:true}, trackUserLocation:false }), "bottom-right");
+  // Controles centrados a la derecha
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+  map.addControl(new maplibregl.GeolocateControl({ positionOptions:{enableHighAccuracy:true}, trackUserLocation:false }), "top-right");
 
   map.on("moveend", () => {
     const c = map.getCenter();
@@ -152,35 +181,54 @@ function crearMapa() {
   popup = new maplibregl.Popup({ closeButton:true, closeOnClick:false, maxWidth:"none" });
 
   map.on("load", () => {
-    map.addSource("recintos", { type:"geojson", data: crearGeoJSON() });
-    map.addLayer({ id:"recintos", type:"circle", source:"recintos", paint:{
-      "circle-radius": radioExpr,
-      "circle-color":  colorExpr(),
-      "circle-opacity": opacidadExpr(),
-      "circle-stroke-width": 0.8,
-      "circle-stroke-color": "rgba(255,255,255,0.3)",
-    }});
-    map.addSource("etiquetas", { type:"raster", tiles:["https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"], tileSize:256 });
-    map.addLayer({ id:"etiquetas", type:"raster", source:"etiquetas", paint:{"raster-opacity":0.85} });
-    map.addLayer({ id:"hover", type:"circle", source:"recintos", paint:{ "circle-color":"rgba(0,0,0,0)", "circle-radius":radioHover }});
-
-    // Inicializar KDE overlay
+    agregarCapas();
     kdeInit(map);
-    kdeSetDatos(resultados, modo, candActual);
-
     actualizarLeyenda();
     setupPopup();
   });
 }
 
+function agregarCapas() {
+  const bm = BASEMAPS[basemapActual];
+  map.addSource("recintos", { type:"geojson", data: crearGeoJSON() });
+  map.addLayer({ id:"recintos", type:"circle", source:"recintos", paint:{
+    "circle-radius": radioExpr,
+    "circle-color":  colorExpr(),
+    "circle-opacity": opacidadExpr(),
+    "circle-stroke-width": 0.8,
+    "circle-stroke-color": "rgba(255,255,255,0.3)",
+  }});
+  const labelUrl = bm?.labels ?? BASEMAPS["Claro"].labels;
+  map.addSource("etiquetas", { type:"raster", tiles:[labelUrl], tileSize:256 });
+  map.addLayer({ id:"etiquetas", type:"raster", source:"etiquetas", paint:{"raster-opacity":0.85} });
+  map.addLayer({ id:"hover", type:"circle", source:"recintos", paint:{ "circle-color":"rgba(0,0,0,0)", "circle-radius":radioHover }});
+  setupPopup();
+}
+
+function cambiarBasemap(nombre) {
+  if (nombre === basemapActual) return;
+  basemapActual = nombre;
+  const bm = BASEMAPS[nombre];
+  map.setStyle(bm.style);
+  map.once("styledata", () => {
+    if (!map.getSource("recintos")) agregarCapas();
+  });
+}
+
 function actualizarMapa() {
   if (!map.getSource("recintos")) return;
-  const geo = crearGeoJSON();
-  map.getSource("recintos").setData(geo);
+  map.getSource("recintos").setData(crearGeoJSON());
   map.setPaintProperty("recintos", "circle-color",   colorExpr());
   map.setPaintProperty("recintos", "circle-opacity",  opacidadExpr());
-  kdeSetDatos(resultados, modo, candActual);
   actualizarLeyenda();
+}
+
+// ── Visibilidad de puntos ──────────────────────────────────────────────────
+function setVisibilidadPuntos(visible) {
+  mostrarPuntos = visible;
+  if (!map.getSource("recintos")) return;
+  map.setLayoutProperty("recintos", "visibility", visible ? "visible" : "none");
+  map.setLayoutProperty("hover",    "visibility", visible ? "visible" : "none");
 }
 
 // ── Leyenda ────────────────────────────────────────────────────────────────
@@ -198,46 +246,28 @@ function actualizarLeyenda() {
 function renderLeyenda(id) {
   const el = document.querySelector("#" + id);
   if (!el) return;
-
   if (modo === "ganador") {
     const items = candidatos
       .filter(c => c.porcentaje_total > 0.003)
       .sort((a,b) => b.porcentaje_total - a.porcentaje_total)
-      .map(c => `
-        <div class="leg-item">
-          <span class="leg-dot" style="background:${color(c.nombre)}"></span>
-          <span class="leg-nom">${c.nombre}</span>
-          <span class="leg-pct">${fmt(c.porcentaje_total)}</span>
-        </div>`).join("");
+      .map(c => `<div class="leg-item"><span class="leg-dot" style="background:${color(c.nombre)}"></span><span class="leg-nom">${c.nombre}</span><span class="leg-pct">${fmt(c.porcentaje_total)}</span></div>`).join("");
     el.innerHTML = `<div class="leg-lista">${items}</div>`;
   } else {
     const colores = modo === "invalido"
       ? ["#e8f5e9","#66bb6a","#1b5e20"]
       : ["#f5f5f5", color(candActual)+"99", color(candActual)];
     const labels = modo === "invalido" ? ["3%","20%","40%"] : ["0%","—","máx"];
-    el.innerHTML = `
-      <div class="grad-bar" style="background:linear-gradient(to right,${colores.join(",")})"></div>
-      <div class="grad-lbls">${labels.map(l=>`<span class="grad-lbl">${l}</span>`).join("")}</div>`;
+    el.innerHTML = `<div class="grad-bar" style="background:linear-gradient(to right,${colores.join(",")})"></div><div class="grad-lbls">${labels.map(l=>`<span class="grad-lbl">${l}</span>`).join("")}</div>`;
   }
 }
 
 // ── Popup ──────────────────────────────────────────────────────────────────
-function fotoSrc(partido) {
-  const ext = FOTOS_EXT[partido] ?? "jpg";
-  return `${FOTOS}${partido}.${ext}`;
-}
+function fotoSrc(partido) { return `${FOTOS}${partido}.${FOTOS_EXT[partido]??'jpg'}`; }
 
 function fotoEl(partido, size) {
-  const c = color(partido);
-  const inicial = (partido ?? "?")[0];
+  const c = color(partido), ini = (partido ?? "?")[0];
   const id = "ph_" + partido.replace(/[^a-z0-9]/gi,"_") + "_" + size;
-  return `
-    <div id="${id}" style="width:${size}px;height:${size}px;border-radius:50%;
-      background:${c}25;border:2px solid ${c};display:flex;align-items:center;justify-content:center;
-      font:700 ${Math.round(size*.42)}px Outfit,sans-serif;color:${c};flex-shrink:0">${inicial}</div>
-    <img src="${fotoSrc(partido)}" style="display:none;width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;border:2px solid ${c};flex-shrink:0"
-      onerror="this.style.display='none'"
-      onload="this.style.display='block';var ph=document.getElementById('${id}');if(ph)ph.style.display='none'">`;
+  return `<div id="${id}" style="width:${size}px;height:${size}px;border-radius:50%;background:${c}25;border:2px solid ${c};display:flex;align-items:center;justify-content:center;font:700 ${Math.round(size*.42)}px Outfit,sans-serif;color:${c};flex-shrink:0">${ini}</div><img src="${fotoSrc(partido)}" style="display:none;width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;border:2px solid ${c};flex-shrink:0" onerror="this.style.display='none'" onload="this.style.display='block';var ph=document.getElementById('${id}');if(ph)ph.style.display='none'">`;
 }
 
 function analisisHTML(lista, invalido) {
@@ -252,12 +282,7 @@ function analisisHTML(lista, invalido) {
     : ["🏛",`Bastión de ${g0} — domina con ${fmt(p0)}`];
   const invalTxt = invalido > 0.25 ? `⚠️ Alto rechazo: ${fmt(invalido)} blancos/nulos`
     : invalido > 0.12 ? `📋 Rechazo moderado: ${fmt(invalido)} blancos/nulos` : null;
-  return `
-    <div class="pp-analisis">
-      <div class="pp-arow"><span>${icono}</span>${texto}</div>
-      <div class="pp-arow"><span>👥</span>${nCands} candidatos con más del 2%</div>
-      ${invalTxt ? `<div class="pp-arow">${invalTxt}</div>` : ""}
-    </div>`;
+  return `<div class="pp-analisis"><div class="pp-arow"><span>${icono}</span>${texto}</div><div class="pp-arow"><span>👥</span>${nCands} candidatos con más del 2%</div>${invalTxt ? `<div class="pp-arow">${invalTxt}</div>` : ""}</div>`;
 }
 
 function popupHTML(props) {
@@ -265,45 +290,20 @@ function popupHTML(props) {
   const lista = Object.entries(cands).sort(([,a],[,b])=>b-a).filter(([,v])=>v>0);
   const gan   = props.partido_ganador ?? "—";
   const cg    = color(gan);
-
   const barras = lista.map(([nom,pct]) => {
-    const c  = color(nom);
-    const eG = nom === gan;
-    const eS = nom === candActual;
-    return `<div class="cand${eG?" winner":""}">
-      <div class="cand-row">
-        ${fotoEl(nom, 20)}
-        <span class="cand-nom">${nom}</span>
-        <span class="cand-pct" style="color:${c}">${fmt(pct)}</span>
-      </div>
-      <div class="cand-bg"><div class="cand-bar" style="width:${(pct*100).toFixed(1)}%;background:${c}${eG||eS?"":"88"}"></div></div>
-    </div>`;
+    const c = color(nom), eG = nom===gan, eS = nom===candActual;
+    return `<div class="cand${eG?" winner":""}"><div class="cand-row">${fotoEl(nom,20)}<span class="cand-nom">${nom}</span><span class="cand-pct" style="color:${c}">${fmt(pct)}</span></div><div class="cand-bg"><div class="cand-bar" style="width:${(pct*100).toFixed(1)}%;background:${c}${eG||eS?"":"88"}"></div></div></div>`;
   }).join("");
-
-  return `<div class="pp">
-    <div class="pp-head">
-      <div class="pp-winner-row">
-        ${fotoEl(gan, 38)}
-        <div class="pp-info">
-          <div class="pp-title">${props.recinto ?? "Recinto sin nombre"}</div>
-          <div class="pp-badge" style="background:${cg}18;color:${cg};border-color:${cg}44">${gan} · ${fmt(props.ganador)}</div>
-        </div>
-      </div>
-    </div>
-    <div class="pp-stats">
-      <div class="pp-stat"><span class="pp-sv">${fmtN(props.habilitados)}</span><span class="pp-sl">Habilitados</span></div>
-      <div class="pp-stat"><span class="pp-sv">${fmt(props.validos)}</span><span class="pp-sl">Válidos</span></div>
-      <div class="pp-stat"><span class="pp-sv">${fmt(props.blancos)}</span><span class="pp-sl">Blancos</span></div>
-      <div class="pp-stat"><span class="pp-sv">${fmt(props.nulos)}</span><span class="pp-sl">Nulos</span></div>
-    </div>
-    ${analisisHTML(lista, props.invalido ?? 0)}
-    <div class="pp-lista">${barras}</div>
-    <div class="pp-foot">Municipio de La Paz · Elecciones 2026</div>
-  </div>`;
+  return `<div class="pp"><div class="pp-head"><div class="pp-winner-row">${fotoEl(gan,38)}<div class="pp-info"><div class="pp-title">${props.recinto??"Recinto sin nombre"}</div><div class="pp-badge" style="background:${cg}18;color:${cg};border-color:${cg}44">${gan} · ${fmt(props.ganador)}</div></div></div></div><div class="pp-stats"><div class="pp-stat"><span class="pp-sv">${fmtN(props.habilitados)}</span><span class="pp-sl">Habilitados</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.validos)}</span><span class="pp-sl">Válidos</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.blancos)}</span><span class="pp-sl">Blancos</span></div><div class="pp-stat"><span class="pp-sv">${fmt(props.nulos)}</span><span class="pp-sl">Nulos</span></div></div>${analisisHTML(lista,props.invalido??0)}<div class="pp-lista">${barras}</div><div class="pp-foot">Municipio de La Paz · Elecciones 2026</div></div>`;
 }
 
 function setupPopup() {
+  // Limpiar listeners previos eliminando y re-añadiendo layer hover
   let locked = false;
+  map.off("mouseenter","hover");
+  map.off("mouseleave","hover");
+  map.off("click","hover");
+
   map.on("mouseenter","hover", e => {
     map.getCanvas().style.cursor = "pointer";
     const f = e.features?.[0];
@@ -321,44 +321,45 @@ function setupPopup() {
   });
 }
 
-// ── KDE estado ─────────────────────────────────────────────────────────────
-let kdePaletaActual = "Fuego";
-let kdePartidoActual = "";
-
+// ── KDE Setup ──────────────────────────────────────────────────────────────
 function setupKDE() {
-  // Poblar selector de partido KDE
-  const sel = document.querySelector("#sel-kde-partido");
-  candidatos.forEach(c => {
-    const o = document.createElement("option");
-    o.value = o.textContent = c.nombre;
-    sel.appendChild(o);
-  });
   kdePartidoActual = candidatos[0]?.nombre ?? "";
+
+  // Poblar selector partido
+  const sel = document.querySelector("#sel-kde-partido");
+  if (sel) {
+    candidatos.forEach(c => {
+      const o = document.createElement("option");
+      o.value = o.textContent = c.nombre;
+      sel.appendChild(o);
+    });
+  }
 
   // Poblar grid de paletas
   const grid = document.querySelector("#kde-palette-grid");
-  KDE_PALETTE_NAMES.forEach(nombre => {
-    const stops = KDE_PALETTES[nombre];
-    const cols  = stops.map(s => `rgba(${s[0]},${s[1]},${s[2]},${s[3]/255})`).join(",");
-    const btn   = document.createElement("button");
-    btn.className = "kde-pal-btn" + (nombre === "Fuego" ? " active" : "");
-    btn.title     = nombre;
-    btn.dataset.paleta = nombre;
-    btn.innerHTML = `<span class="kde-pal-strip" style="background:linear-gradient(to right,${cols})"></span><span class="kde-pal-name">${nombre}</span>`;
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".kde-pal-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      kdePaletaActual = nombre;
-      kdeSetPaleta(nombre);
+  if (grid) {
+    KDE_PALETTE_NAMES.forEach(nombre => {
+      const stops = KDE_PALETTES[nombre];
+      const cols  = stops.map(s => `rgba(${s[0]},${s[1]},${s[2]},${s[3]/255})`).join(",");
+      const btn   = document.createElement("button");
+      btn.className = "kde-pal-btn" + (nombre === "Fuego" ? " active" : "");
+      btn.dataset.paleta = nombre;
+      btn.title = nombre;
+      btn.innerHTML = `<span class="kde-pal-strip" style="background:linear-gradient(to right,${cols})"></span><span class="kde-pal-name">${nombre}</span>`;
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".kde-pal-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        kdePaletaActual = nombre;
+        kdeSetPaleta(nombre);
+      });
+      grid.appendChild(btn);
     });
-    grid.appendChild(btn);
-  });
+  }
 
-  // Color del partido activo
-  actualizarKdePartidoColor();
+  actualizarKdeColor();
 }
 
-function actualizarKdePartidoColor() {
+function actualizarKdeColor() {
   const el = document.querySelector("#kde-partido-color");
   if (!el) return;
   const c = color(kdePartidoActual);
@@ -367,7 +368,7 @@ function actualizarKdePartidoColor() {
 
 function aplicarKDE() {
   kdeSetDatos(resultados, kdePartidoActual, "partido");
-  actualizarKdePartidoColor();
+  actualizarKdeColor();
 }
 
 // ── UI eventos ─────────────────────────────────────────────────────────────
@@ -387,25 +388,29 @@ function setupUI() {
     document.querySelector("#legendBtn").classList.toggle("active");
   });
 
-  // Pestañas Mapa / KDE
+  // ── Pestañas Mapa / KDE ───────────────────────────────────────────────
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      const tab = btn.dataset.tab;
-      document.querySelector("#tab-mapa").style.display = tab === "mapa" ? "" : "none";
-      document.querySelector("#tab-kde").style.display  = tab === "kde"  ? "" : "none";
-      document.querySelector("#legendFab").style.display = tab === "mapa" ? "" : "none";
-      if (tab === "kde") {
+      tabActual = btn.dataset.tab;
+
+      document.querySelector("#tab-mapa").style.display = tabActual === "mapa" ? "" : "none";
+      document.querySelector("#tab-kde").style.display  = tabActual === "kde"  ? "" : "none";
+      document.querySelector("#legendFab").style.display = tabActual === "mapa" ? "" : "none";
+
+      if (tabActual === "kde") {
         kdeToggle(true);
         aplicarKDE();
       } else {
         kdeToggle(false);
+        // Restaurar puntos y popup al volver al mapa
+        setVisibilidadPuntos(true);
       }
     });
   });
 
-  // Botones modo
+  // ── Modos ─────────────────────────────────────────────────────────────
   document.querySelectorAll(".mode-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
@@ -417,10 +422,17 @@ function setupUI() {
     });
   });
 
-  // Selector candidato (mapa)
+  // Selector candidato mapa
   document.querySelector("#sel-cand")?.addEventListener("change", e => {
     candActual = e.target.value;
     if (map.getSource("recintos")) actualizarMapa();
+  });
+
+  // ── KDE controles ─────────────────────────────────────────────────────
+
+  // Toggle puntos en KDE
+  document.querySelector("#kde-toggle-puntos")?.addEventListener("change", e => {
+    setVisibilidadPuntos(e.target.checked);
   });
 
   // Selector partido KDE
@@ -429,18 +441,27 @@ function setupUI() {
     aplicarKDE();
   });
 
-  // KDE radio
+  // Radio
   document.querySelector("#kde-radio")?.addEventListener("input", e => {
     const v = +e.target.value;
     document.querySelector("#kde-radio-val").textContent = v + " m";
     kdeSetRadio(v);
   });
 
-  // KDE opacidad
+  // Opacidad
   document.querySelector("#kde-opac")?.addEventListener("input", e => {
     const v = +e.target.value;
     document.querySelector("#kde-opac-val").textContent = v + "%";
     kdeSetOpacidad(v / 100);
+  });
+
+  // ── Selector de mapa base ─────────────────────────────────────────────
+  document.querySelectorAll(".basemap-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".basemap-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      cambiarBasemap(btn.dataset.bm);
+    });
   });
 }
 

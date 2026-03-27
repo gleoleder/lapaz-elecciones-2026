@@ -36,20 +36,21 @@
 
     <aside class="panel" id="panel">
 
-      <!-- Pestañas -->
+      <!-- ── Pestañas ── -->
       <div class="tab-bar">
         <button class="tab-btn active" data-tab="mapa">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8 2 5 5.5 5 10c0 5.5 7 12 7 12s7-6.5 7-12c0-4.5-3-8-7-8z"/></svg>
           Mapa
         </button>
         <button class="tab-btn" data-tab="kde">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17s2-4 5-4 4 4 7 4 5-4 5-4"/><path d="M3 11s2-3 5-3 4 3 7 3 5-3 5-3"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17s2-4 5-4 4 4 7 4 5-4 5-4M3 11s2-3 5-3 4 3 7 3 5-3 5-3"/></svg>
           Calor KDE
         </button>
       </div>
 
-      <!-- ── PESTAÑA MAPA ── -->
+      <!-- ══════════════ PESTAÑA MAPA ══════════════ -->
       <div id="tab-mapa">
+
         <div class="panel-section">
           <label class="filter-label">Visualizar</label>
           <div class="mode-list">
@@ -70,6 +71,24 @@
         </div>
 
         <div class="panel-section">
+          <label class="filter-label">Mapa base</label>
+          <div class="basemap-grid">
+            <button class="basemap-btn active" data-bm="Claro">
+              <span class="bm-preview bm-claro"></span><span>Claro</span>
+            </button>
+            <button class="basemap-btn" data-bm="Oscuro">
+              <span class="bm-preview bm-oscuro"></span><span>Oscuro</span>
+            </button>
+            <button class="basemap-btn" data-bm="Satélite">
+              <span class="bm-preview bm-satelite"></span><span>Satélite</span>
+            </button>
+            <button class="basemap-btn" data-bm="Sin color">
+              <span class="bm-preview bm-sincolor"></span><span>Sin color</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section">
           <label class="filter-label">Estadísticas</label>
           <div class="stat-row"><span class="stat-lb">Recintos totales</span><span class="stat-vl accent" id="p-rec">—</span></div>
           <div class="stat-row"><span class="stat-lb">Total habilitados</span><span class="stat-vl accent" id="p-hab">—</span></div>
@@ -77,27 +96,49 @@
           <div class="stat-row"><span class="stat-lb">Menor recinto</span><span class="stat-vl" id="p-min">—</span></div>
           <div class="stat-row"><span class="stat-lb">Candidatos</span><span class="stat-vl" id="p-cands">—</span></div>
         </div>
+
       </div>
 
-      <!-- ── PESTAÑA KDE ── -->
+      <!-- ══════════════ PESTAÑA KDE ══════════════ -->
       <div id="tab-kde" style="display:none">
 
-        <div class="kde-info-box">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          <span>Densidad de apoyo electoral por zona geográfica usando kernel cuártico biweight</span>
+        <!-- Teoría KDE -->
+        <div class="kde-teoria">
+          <div class="kde-teoria-titulo">¿Qué es el Mapa de Calor KDE?</div>
+          <p>El <strong>KDE (Kernel Density Estimation)</strong> convierte puntos dispersos (recintos) en una superficie continua de densidad. Cada recinto "irradia" intensidad hacia su zona geográfica, ponderada por sus votos.</p>
+          <p>Las zonas <strong>más calientes</strong> (colores intensos) indican donde hay mayor concentración geográfica de apoyo al partido seleccionado.</p>
+          <div class="kde-formula-box">
+            <span class="kde-formula-eq">K(d) = (3/π) × (1 − d²)²</span>
+            <span class="kde-formula-note">d = distancia normalizada · radio = alcance de irradiación</span>
+          </div>
+          <p class="kde-formula-interp">Peso por recinto = <strong>% votos</strong> × <strong>habilitados</strong>. Un recinto con 40% y 3 000 habilitados irradia más que uno con 10% y 500 habilitados.</p>
         </div>
 
+        <!-- Partido -->
         <div class="panel-section">
-          <label class="filter-label">Partido / Candidato</label>
+          <label class="filter-label">Partido a analizar</label>
           <select class="filter-select" id="sel-kde-partido"></select>
-          <div class="kde-partido-color" id="kde-partido-color"></div>
+          <div id="kde-partido-color"></div>
         </div>
 
+        <!-- Toggle puntos -->
+        <div class="panel-section">
+          <div class="kde-toggle-row">
+            <span class="kde-toggle-lbl">Mostrar puntos de recintos</span>
+            <label class="toggle-sw">
+              <input type="checkbox" id="kde-toggle-puntos" checked>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Paleta -->
         <div class="panel-section">
           <label class="filter-label">Paleta de color</label>
           <div class="kde-palette-grid" id="kde-palette-grid"></div>
         </div>
 
+        <!-- Parámetros -->
         <div class="panel-section">
           <label class="filter-label">Parámetros</label>
           <div class="kde-row">
@@ -110,12 +151,6 @@
             <input type="range" class="kde-range" id="kde-opac" min="15" max="100" step="5" value="82">
             <span class="kde-val" id="kde-opac-val">82%</span>
           </div>
-        </div>
-
-        <div class="panel-section">
-          <label class="filter-label">Fórmula</label>
-          <div class="kde-formula">K(d) = (3/π) × (1 − d²)²</div>
-          <div class="kde-formula-desc">Peso = % votos × habilitados por recinto</div>
         </div>
 
       </div>

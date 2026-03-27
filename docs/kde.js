@@ -1,13 +1,11 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //  kde.js  ·  Kernel Density Estimation — Kernel Cuártico Biweight
 //  K(d) = (3/π)(1−d²)²  para d = dist/radio ∈ [0,1]
-//  Peso por recinto = porcentaje_partido × habilitados
-//  Canvas overlay sobre MapLibre GL
+//  Peso = porcentaje_partido × habilitados por recinto
 // ═══════════════════════════════════════════════════════════════════════════
 
 'use strict';
 
-// ── Paletas RGBA [R,G,B,A] ───────────────────────────────────────────────
 const KDE_PALETTES = {
   'Fuego':   [[0,0,0,0],[30,0,10,70],[90,0,50,160],[180,20,80,210],[230,80,20,235],[255,160,0,255],[255,235,59,255],[255,255,255,255]],
   'Plasma':  [[0,0,0,0],[13,8,135,70],[84,2,163,160],[139,10,165,210],[185,50,137,235],[219,92,104,255],[244,136,73,255],[252,253,191,255]],
@@ -24,16 +22,13 @@ const KDE_PALETTE_NAMES = Object.keys(KDE_PALETTES);
 
 function kpColor(t, paleta) {
   const stops = KDE_PALETTES[paleta] || KDE_PALETTES['Fuego'];
-  const n  = stops.length - 1;
+  const n = stops.length - 1;
   const idx = Math.min(t * n, n);
-  const lo  = Math.floor(idx), hi = Math.min(lo + 1, n);
-  const f   = idx - lo;
-  const a   = stops[lo], b = stops[hi];
+  const lo = Math.floor(idx), hi = Math.min(lo + 1, n);
+  const f = idx - lo, a = stops[lo], b = stops[hi];
   return [
-    Math.round(a[0] + (b[0]-a[0])*f),
-    Math.round(a[1] + (b[1]-a[1])*f),
-    Math.round(a[2] + (b[2]-a[2])*f),
-    Math.round(a[3] + (b[3]-a[3])*f),
+    Math.round(a[0]+(b[0]-a[0])*f), Math.round(a[1]+(b[1]-a[1])*f),
+    Math.round(a[2]+(b[2]-a[2])*f), Math.round(a[3]+(b[3]-a[3])*f),
   ];
 }
 
@@ -42,10 +37,10 @@ let _map      = null;
 let _canvas   = null;
 let _ctx      = null;
 let _activo   = false;
-let _radio    = 900;      // metros
+let _radio    = 900;
 let _opacidad = 0.82;
 let _paleta   = 'Fuego';
-let _puntos   = [];       // [{lng, lat, w}]
+let _puntos   = [];
 let _raf      = null;
 
 // ── API pública ───────────────────────────────────────────────────────────
@@ -53,31 +48,31 @@ let _raf      = null;
 function kdeInit(mapInstance) {
   _map = mapInstance;
 
-  // El canvas va directamente dentro del contenedor del mapa (position:relative)
-  const container = mapInstance.getContainer();
+  // CRÍTICO: añadir canvas como último hijo del mismo div #map
+  // MapLibre ya pone position:relative en ese div
+  const mapDiv = mapInstance.getContainer();
 
   _canvas = document.createElement('canvas');
-  Object.assign(_canvas.style, {
-    position:      'absolute',
-    top:           '0',
-    left:          '0',
-    pointerEvents: 'none',
-    zIndex:        '4',
-    display:       'none',
-  });
-  container.appendChild(_canvas);
+  // Fijar con CSS para que ocupe exactamente el mapa
+  _canvas.style.cssText = [
+    'position:absolute',
+    'top:0', 'left:0',
+    'width:100%', 'height:100%',
+    'pointer-events:none',
+    'z-index:999',   // alto para pasar por encima de todo
+    'display:none',
+  ].join(';');
+
+  mapDiv.appendChild(_canvas);
   _ctx = _canvas.getContext('2d');
 
-  mapInstance.on('move',   _schedDraw);
-  mapInstance.on('zoom',   _schedDraw);
-  mapInstance.on('resize', _schedDraw);
+  mapInstance.on('move',   _sched);
+  mapInstance.on('zoom',   _sched);
+  mapInstance.on('resize', _sched);
 }
 
 /**
- * Carga puntos para el partido dado.
- * resultados: {codigo: {x, y, habilitados, candidatos:{partido:pct}, invalido, ganador}}
- * partido: nombre del candidato/partido (string)
- * modoKde: 'partido' | 'invalido' | 'ganador'
+ * partido: nombre del partido  |  modoKde: 'partido' | 'invalido' | 'ganador'
  */
 function kdeSetDatos(resultados, partido, modoKde) {
   _puntos = [];
@@ -90,38 +85,32 @@ function kdeSetDatos(resultados, partido, modoKde) {
     const hab = v.habilitados || 0;
     if (hab <= 0) return;
 
-    let pct = 0;
-    if (modoKde === 'invalido') {
-      pct = v.invalido ?? 0;
-    } else if (modoKde === 'ganador') {
-      pct = v.ganador ?? 0;
-    } else {
-      pct = v.candidatos?.[partido] ?? 0;
-    }
+    let pct = modoKde === 'invalido' ? (v.invalido ?? 0)
+            : modoKde === 'ganador'  ? (v.ganador  ?? 0)
+            : (v.candidatos?.[partido] ?? 0);
 
     const w = pct * hab;
     if (w > 0) { tmp.push({ lng, lat, w }); if (w > maxW) maxW = w; }
   });
 
-  // Normalizar pesos
-  if (maxW > 0) _puntos = tmp.map(p => ({ lng: p.lng, lat: p.lat, w: p.w / maxW }));
-  if (_activo) _schedDraw();
+  _puntos = maxW > 0 ? tmp.map(p => ({ ...p, w: p.w / maxW })) : [];
+  if (_activo) _sched();
 }
 
-function kdeSetRadio(metros)  { _radio    = metros;   if (_activo) _schedDraw(); }
-function kdeSetOpacidad(v)    { _opacidad = v;        if (_activo) _schedDraw(); }
-function kdeSetPaleta(nombre) { _paleta   = nombre;   if (_activo) _schedDraw(); }
+function kdeSetRadio(m)      { _radio    = m;    if (_activo) _sched(); }
+function kdeSetOpacidad(v)   { _opacidad = v;    if (_activo) _sched(); }
+function kdeSetPaleta(n)     { _paleta   = n;    if (_activo) _sched(); }
 
 function kdeToggle(on) {
   _activo = !!on;
   if (_canvas) _canvas.style.display = _activo ? 'block' : 'none';
-  if (_activo) _schedDraw();
-  else if (_ctx && _canvas) _ctx.clearRect(0, 0, _canvas.width, _canvas.height);
+  if (_activo) _sched();
+  else { if (_ctx && _canvas) _ctx.clearRect(0, 0, _canvas.width, _canvas.height); }
 }
 
 // ── Internos ──────────────────────────────────────────────────────────────
 
-function _schedDraw() {
+function _sched() {
   if (_raf) cancelAnimationFrame(_raf);
   _raf = requestAnimationFrame(_draw);
 }
@@ -129,88 +118,82 @@ function _schedDraw() {
 function _draw() {
   if (!_map || !_canvas || !_ctx || !_activo) return;
 
-  // Usar las dimensiones reales del contenedor del mapa
-  const container = _map.getContainer();
-  const W = container.clientWidth  || container.offsetWidth;
-  const H = container.clientHeight || container.offsetHeight;
+  // Tamaño real de la pantalla del mapa (CSS pixels)
+  // Usamos offsetWidth del contenedor porque clientWidth puede ser 0 en algunos casos
+  const mapDiv = _map.getContainer();
+  const W = mapDiv.offsetWidth;
+  const H = mapDiv.offsetHeight;
   if (!W || !H) return;
 
-  // Ajustar tamaño del canvas al contenedor
-  _canvas.width  = W;
-  _canvas.height = H;
+  // Ajustar resolución del canvas a su tamaño CSS real
+  // (evita deformación en pantallas retina — usamos CSS pixels)
+  if (_canvas.width !== W || _canvas.height !== H) {
+    _canvas.width  = W;
+    _canvas.height = H;
+  } else {
+    _ctx.clearRect(0, 0, W, H);
+  }
 
-  if (!_puntos.length) { _ctx.clearRect(0, 0, W, H); return; }
+  if (!_puntos.length) return;
 
-  // Metros → píxeles (latitud La Paz ≈ −16.5°)
+  // Radio en píxeles (La Paz ~−16.5°)
   const zoom    = _map.getZoom();
   const mPx     = 156543.03 * Math.cos(-16.5 * Math.PI / 180) / Math.pow(2, zoom);
   const radioPx = Math.max(_radio / mPx, 8);
 
-  // Proyectar puntos a coordenadas de pantalla
-  const R  = radioPx;
+  // Proyectar puntos visibles
+  const R = radioPx;
   const pts = [];
   for (const p of _puntos) {
     const px = _map.project([p.lng, p.lat]);
-    // Solo puntos que afectan el área visible
     if (px.x < -R || px.x > W + R || px.y < -R || px.y > H + R) continue;
     pts.push({ x: px.x, y: px.y, w: p.w });
   }
+  if (!pts.length) return;
 
-  if (!pts.length) { _ctx.clearRect(0, 0, W, H); return; }
-
-  // ── Grid KDE a resolución reducida (factor 2) ──────────────────────────
-  const factor = 2;
-  const gw     = Math.ceil(W / factor);
-  const gh     = Math.ceil(H / factor);
-  const grid   = new Float32Array(gw * gh);
-  const rG     = R / factor;
-  const rG2    = rG * rG;
-  const K      = 3 / Math.PI;  // constante kernel cuártico
+  // ── Grid KDE (factor 2 para rendimiento) ─────────────────────────────
+  const F  = 2;
+  const gw = Math.ceil(W / F);
+  const gh = Math.ceil(H / F);
+  const grid = new Float32Array(gw * gh);
+  const rG   = R / F, rG2 = rG * rG;
+  const K    = 3 / Math.PI;
 
   for (const p of pts) {
-    const gx = p.x / factor;
-    const gy = p.y / factor;
+    const gx = p.x / F, gy = p.y / F;
     const x0 = Math.max(0,  Math.floor(gx - rG));
     const x1 = Math.min(gw, Math.ceil (gx + rG));
     const y0 = Math.max(0,  Math.floor(gy - rG));
     const y1 = Math.min(gh, Math.ceil (gy + rG));
-
     for (let iy = y0; iy < y1; iy++) {
       const dy2 = (iy - gy) * (iy - gy);
       for (let ix = x0; ix < x1; ix++) {
         const d2 = ((ix - gx) * (ix - gx) + dy2) / rG2;
-        if (d2 >= 1) continue;
-        grid[iy * gw + ix] += K * (1 - d2) * (1 - d2) * p.w;
+        if (d2 < 1) grid[iy * gw + ix] += K * (1 - d2) * (1 - d2) * p.w;
       }
     }
   }
 
-  // Normalizar
   let maxVal = 0;
   for (let i = 0; i < grid.length; i++) if (grid[i] > maxVal) maxVal = grid[i];
-  if (maxVal === 0) { _ctx.clearRect(0, 0, W, H); return; }
+  if (!maxVal) return;
 
-  // Pintar en canvas auxiliar a resolución reducida
-  const off    = document.createElement('canvas');
-  off.width    = gw;
-  off.height   = gh;
-  const offCtx = off.getContext('2d');
-  const img    = offCtx.createImageData(gw, gh);
-  const d      = img.data;
+  // Pintar offscreen a resolución reducida
+  const off = document.createElement('canvas');
+  off.width = gw; off.height = gh;
+  const octx = off.getContext('2d');
+  const img  = octx.createImageData(gw, gh);
+  const d    = img.data;
 
   for (let i = 0; i < grid.length; i++) {
     const t = grid[i] / maxVal;
     if (t < 0.005) { d[i*4+3] = 0; continue; }
     const [R2, G, B, A] = kpColor(t, _paleta);
-    d[i*4]   = R2;
-    d[i*4+1] = G;
-    d[i*4+2] = B;
+    d[i*4] = R2; d[i*4+1] = G; d[i*4+2] = B;
     d[i*4+3] = Math.round(A * _opacidad);
   }
 
-  offCtx.putImageData(img, 0, 0);
-
-  // Escalar al canvas principal con interpolación suave
+  octx.putImageData(img, 0, 0);
   _ctx.clearRect(0, 0, W, H);
   _ctx.imageSmoothingEnabled = true;
   _ctx.imageSmoothingQuality = 'high';
