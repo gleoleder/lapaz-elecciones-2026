@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mapa Electoral · La Paz 2026</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.0.2/dist/maplibre-gl.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-brand">
+      <div class="header-texts">
+        <span class="header-title">Mapa Electoral · La Paz 2026</span>
+        <span class="header-sub">Municipio de La Paz · Subnacionales 2026</span>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-chip green"><span class="stat-num" id="st-rec">—</span><span class="stat-lbl">recintos</span></div>
+      <div class="stat-chip amber"><span class="stat-num" id="st-hab">—</span><span class="stat-lbl">habilitados</span></div>
+      <div class="stat-chip blue"><span class="stat-num" id="st-can">—</span><span class="stat-lbl">candidatos</span></div>
+    </div>
+    <div class="header-ts" id="header-ts"></div>
+    <button class="btn-icon" id="btnPanel">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </header>
+
+  <div class="layout">
+
+    <button class="panel-fab open" id="panelFab">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+
+    <aside class="panel" id="panel">
+
+      <div class="panel-section">
+        <label class="filter-label">Visualizar</label>
+        <div class="mode-list">
+          <button class="mode-btn active" data-modo="ganador"><span class="mode-dot"></span>Ganador por recinto</button>
+          <button class="mode-btn" data-modo="candidato"><span class="mode-dot"></span>Candidato específico</button>
+          <button class="mode-btn" data-modo="invalido"><span class="mode-dot"></span>Votos blancos / nulos</button>
+        </div>
+      </div>
+
+      <div class="panel-section" id="sect-cand" style="display:none">
+        <label class="filter-label">Candidato</label>
+        <select class="filter-select" id="sel-cand"></select>
+      </div>
+
+      <div class="panel-section">
+        <label class="filter-label" id="leg-titulo">Partido ganador por recinto</label>
+        <div id="leg-panel"></div>
+      </div>
+
+      <div class="panel-section">
+        <label class="filter-label">Estadísticas</label>
+        <div class="stat-row"><span class="stat-lb">Recintos totales</span><span class="stat-vl accent" id="p-rec">—</span></div>
+        <div class="stat-row"><span class="stat-lb">Total habilitados</span><span class="stat-vl accent" id="p-hab">—</span></div>
+        <div class="stat-row"><span class="stat-lb">Mayor recinto</span><span class="stat-vl" id="p-max">—</span></div>
+        <div class="stat-row"><span class="stat-lb">Menor recinto</span><span class="stat-vl" id="p-min">—</span></div>
+        <div class="stat-row"><span class="stat-lb">Candidatos</span><span class="stat-vl" id="p-cands">—</span></div>
+      </div>
+
+    </aside>
+
+    <main class="map-area">
+      <div id="map"></div>
+
+      <div class="legend-fab" id="legendFab">
+        <div class="legend-panel" id="legendPanel">
+          <div class="lp-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span>LEYENDA</span>
+          </div>
+          <div class="lp-body">
+            <div class="lp-subtitle" id="lp-sub">Partido ganador por recinto</div>
+            <div id="lp-content"></div>
+          </div>
+        </div>
+        <button class="legend-btn" id="legendBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.5" fill="currentColor" stroke="none"/><rect x="2.5" y="10.5" width="2" height="3" rx=".5" fill="currentColor" stroke="none"/><path d="M2 17.5l1.5 2 2.5-3" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+        </button>
+      </div>
+
+      <div class="map-credit">Elaborado por: <strong>John Leonardo Cabrera Espíndola</strong> — Innovación Humana</div>
+    </main>
+
+  </div>
+
+  <div class="loader" id="loader">
+    <div class="loader-ring"></div>
+    <div class="loader-txt">Cargando datos electorales...</div>
+  </div>
+
+  <script src="https://unpkg.com/maplibre-gl@4.0.2/dist/maplibre-gl.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
