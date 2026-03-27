@@ -16,25 +16,30 @@ export const MAPA_FALLBACK = { center: [-68.15, -16.5], zoom: 12 };
 
 // ── Colores por partido ────────────────────────────────────────────────────
 export const COLORES_PARTIDOS = {
-  "IH":            "#c0392b",
-  "SPBC":          "#1a6eb5",
-  "VENCEREMOS":    "#d35400",
-  "ASLP":          "#7d3c98",
-  "APB-SUMATE":    "#148f77",
-  "JALLALLA LP":   "#d4ac0d",
-  "ASP":           "#1e8449",
-  "M.P.S.":        "#c2185b",
-  "PATRIA-LA-PAZ": "#0277bd",
-  "LIBRE":         "#e64a19",
-  "VIDA":          "#2e7d32",
-  "A-UPP":         "#6d4c41",
-  "FRI":           "#455a64",
-  "MTS":           "#e65100",
-  "UPC":           "#6a1b9a",
-  "NGP":           "#b71c1c",
-  "PDC":           "#1565c0",
+  "IH":            "#00bcd4",  // celeste turquesa (color oficial IH)
+  "SPBC":          "#f5c518",  // amarillo dorado
+  "VENCEREMOS":    "#e53935",  // rojo vivo
+  "ASLP":          "#7b1fa2",  // violeta
+  "APB-SUMATE":    "#00897b",  // verde esmeralda
+  "JALLALLA LP":   "#ff8f00",  // naranja ámbar
+  "ASP":           "#2e7d32",  // verde oscuro
+  "M.P.S.":        "#1565c0",  // azul royal
+  "PATRIA-LA-PAZ": "#ad1457",  // rosa fucsia
+  "LIBRE":         "#e64a19",  // naranja quemado
+  "VIDA":          "#558b2f",  // verde oliva
+  "A-UPP":         "#4527a0",  // índigo
+  "FRI":           "#00838f",  // cian oscuro
+  "MTS":           "#bf360c",  // terracota
+  "UPC":           "#6d4c41",  // marrón
+  "NGP":           "#37474f",  // gris azulado
+  "PDC":           "#0277bd",  // azul medio
 };
 export const COLOR_DEFAULT = "#9e9e9e";
+
+// Color secundario/acento por partido (para badges, bordes, etc.)
+export const COLORES_SECUNDARIOS = {
+  "IH": "#e91e8c",  // magenta IH
+};
 
 export function colorPartido(nombre) {
   return COLORES_PARTIDOS[nombre] ?? COLOR_DEFAULT;

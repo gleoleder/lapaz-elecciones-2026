@@ -1,5 +1,5 @@
 import maplibregl from "../../_npm/maplibre-gl@5.21.1/13f11ada.js";
-import { COLORES_PARTIDOS, COLOR_DEFAULT } from "./definiciones.52907672.js";
+import { COLORES_PARTIDOS, COLOR_DEFAULT } from "./definiciones.c515d904.js";
 
 export function crearMapa(selector, mapaInicial) {
   const map = new maplibregl.Map({
