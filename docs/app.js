@@ -34,6 +34,7 @@ async function init() {
     poblarSelect();
     crearMapa();
     setupUI();
+    setupKDE();
     document.querySelector("#loader").classList.add("hidden");
   } catch(e) {
     document.querySelector(".loader-txt").textContent = "Error al cargar datos. Intente de nuevo.";
@@ -320,6 +321,55 @@ function setupPopup() {
   });
 }
 
+// ── KDE estado ─────────────────────────────────────────────────────────────
+let kdePaletaActual = "Fuego";
+let kdePartidoActual = "";
+
+function setupKDE() {
+  // Poblar selector de partido KDE
+  const sel = document.querySelector("#sel-kde-partido");
+  candidatos.forEach(c => {
+    const o = document.createElement("option");
+    o.value = o.textContent = c.nombre;
+    sel.appendChild(o);
+  });
+  kdePartidoActual = candidatos[0]?.nombre ?? "";
+
+  // Poblar grid de paletas
+  const grid = document.querySelector("#kde-palette-grid");
+  KDE_PALETTE_NAMES.forEach(nombre => {
+    const stops = KDE_PALETTES[nombre];
+    const cols  = stops.map(s => `rgba(${s[0]},${s[1]},${s[2]},${s[3]/255})`).join(",");
+    const btn   = document.createElement("button");
+    btn.className = "kde-pal-btn" + (nombre === "Fuego" ? " active" : "");
+    btn.title     = nombre;
+    btn.dataset.paleta = nombre;
+    btn.innerHTML = `<span class="kde-pal-strip" style="background:linear-gradient(to right,${cols})"></span><span class="kde-pal-name">${nombre}</span>`;
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".kde-pal-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      kdePaletaActual = nombre;
+      kdeSetPaleta(nombre);
+    });
+    grid.appendChild(btn);
+  });
+
+  // Color del partido activo
+  actualizarKdePartidoColor();
+}
+
+function actualizarKdePartidoColor() {
+  const el = document.querySelector("#kde-partido-color");
+  if (!el) return;
+  const c = color(kdePartidoActual);
+  el.style.cssText = `height:3px;border-radius:2px;margin-top:6px;background:linear-gradient(to right,${c}22,${c});`;
+}
+
+function aplicarKDE() {
+  kdeSetDatos(resultados, kdePartidoActual, "partido");
+  actualizarKdePartidoColor();
+}
+
 // ── UI eventos ─────────────────────────────────────────────────────────────
 function setupUI() {
   // Panel toggle
@@ -337,6 +387,24 @@ function setupUI() {
     document.querySelector("#legendBtn").classList.toggle("active");
   });
 
+  // Pestañas Mapa / KDE
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const tab = btn.dataset.tab;
+      document.querySelector("#tab-mapa").style.display = tab === "mapa" ? "" : "none";
+      document.querySelector("#tab-kde").style.display  = tab === "kde"  ? "" : "none";
+      document.querySelector("#legendFab").style.display = tab === "mapa" ? "" : "none";
+      if (tab === "kde") {
+        kdeToggle(true);
+        aplicarKDE();
+      } else {
+        kdeToggle(false);
+      }
+    });
+  });
+
   // Botones modo
   document.querySelectorAll(".mode-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -349,17 +417,16 @@ function setupUI() {
     });
   });
 
-  // Selector candidato
+  // Selector candidato (mapa)
   document.querySelector("#sel-cand")?.addEventListener("change", e => {
     candActual = e.target.value;
     if (map.getSource("recintos")) actualizarMapa();
   });
 
-  // KDE toggle
-  document.querySelector("#kde-on")?.addEventListener("change", e => {
-    const on = e.target.checked;
-    document.querySelector("#kde-controls").style.display = on ? "" : "none";
-    kdeToggle(on);
+  // Selector partido KDE
+  document.querySelector("#sel-kde-partido")?.addEventListener("change", e => {
+    kdePartidoActual = e.target.value;
+    aplicarKDE();
   });
 
   // KDE radio
@@ -374,11 +441,6 @@ function setupUI() {
     const v = +e.target.value;
     document.querySelector("#kde-opac-val").textContent = v + "%";
     kdeSetOpacidad(v / 100);
-  });
-
-  // KDE paleta
-  document.querySelector("#kde-paleta")?.addEventListener("change", e => {
-    kdeSetPaleta(e.target.value);
   });
 }
 

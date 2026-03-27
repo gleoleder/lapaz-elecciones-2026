@@ -203,22 +203,32 @@ body {
 .loader-txt { color:#fff; font:500 .75rem var(--f); }
 @keyframes spin { to{transform:rotate(360deg)} }
 
-/* ── KDE Controls ── */
-.kde-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
-.kde-toggle { position:relative; display:inline-block; width:36px; height:20px; flex-shrink:0; }
-.kde-toggle input { opacity:0; width:0; height:0; }
-.kde-track  { position:absolute; inset:0; border-radius:20px; background:var(--surface3); border:1px solid var(--border2); cursor:pointer; transition:var(--tr); }
-.kde-track::before { content:''; position:absolute; width:14px; height:14px; left:2px; top:2px; border-radius:50%; background:var(--text4); transition:var(--tr); }
-.kde-toggle input:checked + .kde-track { background:var(--p2); border-color:var(--p); }
-.kde-toggle input:checked + .kde-track::before { transform:translateX(16px); background:var(--p); box-shadow:0 0 6px var(--p); }
+/* ── Pestañas ── */
+.tab-bar { display:flex; border-bottom:1px solid var(--border); flex-shrink:0; }
+.tab-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:5px; padding:9px 4px; background:transparent; border:none; border-bottom:2px solid transparent; color:var(--text3); font:600 .65rem var(--f); cursor:pointer; transition:var(--tr); margin-bottom:-1px; }
+.tab-btn:hover { color:var(--text2); }
+.tab-btn.active { color:var(--p); border-bottom-color:var(--p); }
 
-.kde-row  { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
-.kde-lbl  { font:500 .58rem var(--f); color:var(--text3); width:46px; flex-shrink:0; text-transform:uppercase; letter-spacing:.04em; }
-.kde-range{ flex:1; -webkit-appearance:none; height:3px; border-radius:3px; background:var(--surface3); outline:none; cursor:pointer; }
+/* ── KDE Panel ── */
+.kde-info-box { display:flex; align-items:flex-start; gap:7px; padding:8px 12px; background:rgba(139,92,246,.07); border-bottom:1px solid var(--border); font:400 .62rem var(--f); color:var(--text3); line-height:1.45; }
+
+.kde-row   { display:flex; align-items:center; gap:6px; margin-bottom:7px; }
+.kde-lbl   { font:500 .58rem var(--f); color:var(--text3); width:50px; flex-shrink:0; text-transform:uppercase; letter-spacing:.04em; }
+.kde-range { flex:1; -webkit-appearance:none; height:3px; border-radius:3px; background:var(--surface3); outline:none; cursor:pointer; }
 .kde-range::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--p2); border:2px solid var(--p); cursor:pointer; transition:var(--tr); }
 .kde-range::-webkit-slider-thumb:hover { background:var(--p); box-shadow:0 0 6px var(--p); }
-.kde-val  { font:700 .55rem var(--fm); color:var(--text2); width:38px; text-align:right; flex-shrink:0; }
-.kde-sel  { flex:1; padding:4px 24px 4px 7px; font-size:.7rem; }
+.kde-val   { font:700 .55rem var(--fm); color:var(--text2); width:38px; text-align:right; flex-shrink:0; }
+
+.kde-palette-grid { display:flex; flex-direction:column; gap:4px; margin-top:4px; }
+.kde-pal-btn  { display:flex; align-items:center; gap:7px; padding:5px 8px; border-radius:var(--rx); background:var(--surface2); border:1px solid var(--border); cursor:pointer; transition:var(--tr); width:100%; text-align:left; }
+.kde-pal-btn:hover { border-color:var(--border2); }
+.kde-pal-btn.active { border-color:var(--p2); background:rgba(139,92,246,.12); }
+.kde-pal-strip { flex:1; height:8px; border-radius:4px; }
+.kde-pal-name  { font:600 .6rem var(--f); color:var(--text3); width:46px; text-align:right; flex-shrink:0; }
+.kde-pal-btn.active .kde-pal-name { color:var(--p); }
+
+.kde-formula      { font:700 .7rem var(--fm); color:var(--p); background:rgba(196,181,253,.07); border:1px solid rgba(196,181,253,.15); border-radius:var(--rx); padding:6px 10px; text-align:center; margin-bottom:4px; }
+.kde-formula-desc { font:400 .58rem var(--f); color:var(--text4); text-align:center; }
 
 /* ── Responsive ── */
 @media(max-width:768px){

@@ -36,34 +36,70 @@
 
     <aside class="panel" id="panel">
 
-      <div class="panel-section">
-        <label class="filter-label">Visualizar</label>
-        <div class="mode-list">
-          <button class="mode-btn active" data-modo="ganador"><span class="mode-dot"></span>Ganador por recinto</button>
-          <button class="mode-btn" data-modo="candidato"><span class="mode-dot"></span>Candidato específico</button>
-          <button class="mode-btn" data-modo="invalido"><span class="mode-dot"></span>Votos blancos / nulos</button>
+      <!-- Pestañas -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="mapa">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          Mapa
+        </button>
+        <button class="tab-btn" data-tab="kde">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17s2-4 5-4 4 4 7 4 5-4 5-4"/><path d="M3 11s2-3 5-3 4 3 7 3 5-3 5-3"/></svg>
+          Calor KDE
+        </button>
+      </div>
+
+      <!-- ── PESTAÑA MAPA ── -->
+      <div id="tab-mapa">
+        <div class="panel-section">
+          <label class="filter-label">Visualizar</label>
+          <div class="mode-list">
+            <button class="mode-btn active" data-modo="ganador"><span class="mode-dot"></span>Ganador por recinto</button>
+            <button class="mode-btn" data-modo="candidato"><span class="mode-dot"></span>Candidato específico</button>
+            <button class="mode-btn" data-modo="invalido"><span class="mode-dot"></span>Votos blancos / nulos</button>
+          </div>
+        </div>
+
+        <div class="panel-section" id="sect-cand" style="display:none">
+          <label class="filter-label">Candidato</label>
+          <select class="filter-select" id="sel-cand"></select>
+        </div>
+
+        <div class="panel-section">
+          <label class="filter-label" id="leg-titulo">Partido ganador por recinto</label>
+          <div id="leg-panel"></div>
+        </div>
+
+        <div class="panel-section">
+          <label class="filter-label">Estadísticas</label>
+          <div class="stat-row"><span class="stat-lb">Recintos totales</span><span class="stat-vl accent" id="p-rec">—</span></div>
+          <div class="stat-row"><span class="stat-lb">Total habilitados</span><span class="stat-vl accent" id="p-hab">—</span></div>
+          <div class="stat-row"><span class="stat-lb">Mayor recinto</span><span class="stat-vl" id="p-max">—</span></div>
+          <div class="stat-row"><span class="stat-lb">Menor recinto</span><span class="stat-vl" id="p-min">—</span></div>
+          <div class="stat-row"><span class="stat-lb">Candidatos</span><span class="stat-vl" id="p-cands">—</span></div>
         </div>
       </div>
 
-      <div class="panel-section" id="sect-cand" style="display:none">
-        <label class="filter-label">Candidato</label>
-        <select class="filter-select" id="sel-cand"></select>
-      </div>
+      <!-- ── PESTAÑA KDE ── -->
+      <div id="tab-kde" style="display:none">
 
-      <div class="panel-section">
-        <label class="filter-label" id="leg-titulo">Partido ganador por recinto</label>
-        <div id="leg-panel"></div>
-      </div>
-
-      <div class="panel-section" id="sect-kde">
-        <div class="kde-header">
-          <label class="filter-label" style="margin-bottom:0">Mapa de calor KDE</label>
-          <label class="kde-toggle">
-            <input type="checkbox" id="kde-on">
-            <span class="kde-track"></span>
-          </label>
+        <div class="kde-info-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <span>Densidad de apoyo electoral por zona geográfica usando kernel cuártico biweight</span>
         </div>
-        <div id="kde-controls" style="display:none;margin-top:8px">
+
+        <div class="panel-section">
+          <label class="filter-label">Partido / Candidato</label>
+          <select class="filter-select" id="sel-kde-partido"></select>
+          <div class="kde-partido-color" id="kde-partido-color"></div>
+        </div>
+
+        <div class="panel-section">
+          <label class="filter-label">Paleta de color</label>
+          <div class="kde-palette-grid" id="kde-palette-grid"></div>
+        </div>
+
+        <div class="panel-section">
+          <label class="filter-label">Parámetros</label>
           <div class="kde-row">
             <span class="kde-lbl">Radio</span>
             <input type="range" class="kde-range" id="kde-radio" min="300" max="2500" step="100" value="900">
@@ -71,27 +107,17 @@
           </div>
           <div class="kde-row">
             <span class="kde-lbl">Opacidad</span>
-            <input type="range" class="kde-range" id="kde-opac" min="20" max="100" step="5" value="82">
+            <input type="range" class="kde-range" id="kde-opac" min="15" max="100" step="5" value="82">
             <span class="kde-val" id="kde-opac-val">82%</span>
           </div>
-          <div class="kde-row">
-            <span class="kde-lbl">Paleta</span>
-            <select class="filter-select kde-sel" id="kde-paleta">
-              <option>Fuego</option><option>Plasma</option><option>Viridis</option>
-              <option>Inferno</option><option>Magma</option><option>Cool</option>
-              <option>Neon</option><option>Ocean</option><option>RdYlGn</option>
-            </select>
-          </div>
         </div>
-      </div>
 
-      <div class="panel-section">
-        <label class="filter-label">Estadísticas</label>
-        <div class="stat-row"><span class="stat-lb">Recintos totales</span><span class="stat-vl accent" id="p-rec">—</span></div>
-        <div class="stat-row"><span class="stat-lb">Total habilitados</span><span class="stat-vl accent" id="p-hab">—</span></div>
-        <div class="stat-row"><span class="stat-lb">Mayor recinto</span><span class="stat-vl" id="p-max">—</span></div>
-        <div class="stat-row"><span class="stat-lb">Menor recinto</span><span class="stat-vl" id="p-min">—</span></div>
-        <div class="stat-row"><span class="stat-lb">Candidatos</span><span class="stat-vl" id="p-cands">—</span></div>
+        <div class="panel-section">
+          <label class="filter-label">Fórmula</label>
+          <div class="kde-formula">K(d) = (3/π) × (1 − d²)²</div>
+          <div class="kde-formula-desc">Peso = % votos × habilitados por recinto</div>
+        </div>
+
       </div>
 
     </aside>
