@@ -1,8 +1,25 @@
 name: Actualizar datos La Paz
 
+# DATOS CONGELADOS: el schedule automático fue desactivado el 2026-05-25
+# porque los datos finales de las elecciones ya están capturados.
+#
+# Para reactivar la actualización automática cada 15 minutos, descomentar:
+#
+#   schedule:
+#     - cron: '*/15 * * * *'
+#
+# Flujo de actualización:
+#   1. actualizar.py  — descarga Excel desde la API del OEP:
+#        POST https://computo.oep.org.bo/api/v1/descargar
+#        body: {"tipoArchivo": "excel", "idDepartamento": 2}
+#        La respuesta trae el archivo en Base64; el script lo decodifica
+#        y guarda los CSV en resultados/la-paz/alcaldesaalcalde/
+#   2. preparar.py    — lee los CSV, cruza con geo/recintos.gpkg y genera
+#        resultados/resultados_lapaz.json y resultados/candidatos.json
+#   3. El bot hace commit + push; publicar.yml detecta el cambio y
+#        recompila el sitio en GitHub Pages.
+
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 permissions:
